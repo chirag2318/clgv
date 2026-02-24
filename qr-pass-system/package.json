@@ -1,0 +1,14 @@
+{
+  "name": "qr-pass-system",
+  "version": "1.0.0",
+  "description": "QR-Based Bus/Train Pass Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "qrcode": "^1.5.3"
+  }
+}

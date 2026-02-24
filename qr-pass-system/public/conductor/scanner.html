@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scanner — QR PassPort Conductor</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <!-- QR Scanner -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        .scanner-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .scanner-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .scanner-box {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+        }
+
+        .scanner-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .scanner-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        #scanner-viewport {
+            width: 100%;
+            min-height: 240px;
+            background: #000;
+            position: relative;
+        }
+
+        #scanner-viewport video {
+            width: 100% !important;
+        }
+
+        #html5-qr-code-full-region {
+            border: none !important;
+        }
+
+        #html5-qr-code-full-region img {
+            display: none;
+        }
+
+        #html5-qr-code-full-region>div {
+            border: none !important;
+        }
+
+        .scanner-btn-area {
+            padding: 16px 24px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .result-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .scan-result {
+            border-radius: var(--radius-xl);
+            padding: 32px 24px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .scan-result-icon {
+            font-size: 64px;
+            margin-bottom: 12px;
+            animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pop-in {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .scan-result-status {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.02em;
+        }
+
+        .scan-result.valid {
+            background: rgba(0, 230, 118, 0.08);
+            border: 2px solid rgba(0, 230, 118, 0.35);
+        }
+
+        .scan-result.invalid {
+            background: rgba(255, 71, 87, 0.08);
+            border: 2px solid rgba(255, 71, 87, 0.35);
+        }
+
+        .scan-result.expired {
+            background: rgba(255, 145, 0, 0.08);
+            border: 2px solid rgba(255, 145, 0, 0.35);
+        }
+
+        .scan-result.idle {
+            background: var(--bg-card);
+            border: 1px dashed var(--glass-border);
+        }
+
+        .pass-details-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 20px;
+            display: none;
+        }
+
+        .pass-details-card.show {
+            display: block;
+            animation: fade-in 0.3s ease;
+        }
+
+        .pass-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.88rem;
+        }
+
+        .pass-detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .pass-detail-label {
+            color: var(--text-muted);
+        }
+
+        .pass-detail-value {
+            font-weight: 600;
+        }
+
+        .manual-entry {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 20px;
+        }
+
+        .manual-entry h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            color: var(--text-secondary);
+        }
+
+        .scan-log-mini {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .mini-log-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.82rem;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .mini-log-item:last-child {
+            border-bottom: none;
+        }
+
+        .camera-status {
+            padding: 32px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .camera-status-icon {
+            font-size: 2.5rem;
+        }
+
+        .scanning-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-blue);
+            opacity: 0;
+            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(2);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">🔍</div>
+                <span>Conductor</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-item active"><span class="icon">📷</span><span>Scanner</span></div>
+                <div class="sidebar-item" onclick="switchSection('scan-history')"><span class="icon">📋</span><span>Scan
+                        History</span></div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="sidebar-user-avatar"
+                        style="background:linear-gradient(135deg,#00e676,#00bfa5);">C</div>
+                    <div class="user-details">
+                        <div class="user-name" id="sidebar-user-name">Conductor</div>
+                        <div class="user-role" id="sidebar-user-role">Conductor</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm btn-full" style="margin-top:10px;" onclick="logout()">🚪
+                    Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1 id="section-title">QR Pass Scanner</h1>
+                <div id="scan-count-badge"
+                    style="background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.25);border-radius:999px;padding:4px 14px;font-size:0.82rem;color:var(--accent-blue);">
+                    0 scans today
+                </div>
+            </header>
+
+            <div class="main-body">
+                <!-- Scanner Section -->
+                <div id="section-scanner">
+                    <div class="scanner-layout">
+                        <!-- Left: Camera + Manual -->
+                        <div style="display:flex;flex-direction:column;gap:20px;">
+                            <!-- Camera Scanner -->
+                            <div class="scanner-box">
+                                <div class="scanner-header">
+                                    <h2>📷 Camera Scanner</h2>
+                                    <span id="cam-status-badge"
+                                        style="font-size:0.78rem;background:rgba(255,255,255,0.06);border-radius:999px;padding:3px 10px;color:var(--text-muted);">Ready</span>
+                                </div>
+                                <div id="scanner-viewport">
+                                    <div class="camera-status" id="camera-idle">
+                                        <div class="camera-status-icon">📷</div>
+                                        <div>Click <strong>Start Scanning</strong> to open camera</div>
+                                        <div style="font-size:0.78rem;color:var(--text-muted);">Allow camera permission
+                                            when prompted</div>
+                                    </div>
+                                </div>
+                                <div class="scanner-btn-area">
+                                    <button class="btn btn-primary" id="btn-start-scan" onclick="startScan()">📷 Start
+                                        Scanning</button>
+                                    <button class="btn btn-secondary" id="btn-stop-scan" onclick="stopScan()"
+                                        style="display:none;">⏹ Stop</button>
+                                </div>
+                            </div>
+
+                            <!-- Manual Entry -->
+                            <div class="manual-entry">
+                                <h3>✍️ Manual Token Entry</h3>
+                                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px;">Enter token
+                                    manually if camera scan fails</p>
+                                <div style="display:flex;gap:8px;">
+                                    <input type="text" class="form-input" id="manual-token"
+                                        placeholder="e.g. QRP-ABCD1234WXYZ or QR-DEMO-ACTIVE-001"
+                                        style="flex:1;font-family:monospace;font-size:0.88rem;" />
+                                    <button class="btn btn-primary" onclick="processManualToken()">Validate</button>
+                                </div>
+                                <div style="margin-top:10px;font-size:0.78rem;color:var(--text-muted);">
+                                    Demo tokens: <code
+                                        style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">QR-DEMO-ACTIVE-001</code>
+                                    · <code
+                                        style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">QR-DEMO-EXPIRED-001</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Result Panel -->
+                        <div class="result-panel">
+                            <!-- Result Display -->
+                            <div class="scan-result idle" id="scan-result-box">
+                                <div class="scan-result-icon" id="scan-result-icon">📷</div>
+                                <div class="scan-result-status" id="scan-result-status">Waiting for Scan</div>
+                                <div id="scan-result-sub"
+                                    style="font-size:0.88rem;color:var(--text-secondary);margin-top:8px;">Point camera
+                                    at passenger's QR code or enter token manually</div>
+                            </div>
+
+                            <!-- Pass Details -->
+                            <div class="pass-details-card" id="pass-details-card">
+                                <h3 style="font-size:0.95rem;font-weight:600;margin-bottom:14px;">🎫 Pass Details</h3>
+                                <div id="pass-details-content"></div>
+                            </div>
+
+                            <!-- Recent Scans Mini -->
+                            <div class="manual-entry">
+                                <h3>📋 Recent Scans</h3>
+                                <div class="scan-log-mini" id="recent-scans-mini"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div id="section-scan-history" style="display:none;">
+                    <div class="section-header">
+                        <h2 class="section-title">Scan History</h2>
+                        <p class="section-subtitle">All QR scans performed by you</p>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Result</th>
+                                    <th>Passenger</th>
+                                    <th>Route</th>
+                                    <th>Pass ID</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scan-history-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        let currentSession = null;
+        let qrScanner = null;
+        let scanning = false;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            currentSession = requireAuth('conductor');
+            if (!currentSession) return;
+            initSidebar();
+            renderRecentScans();
+            renderScanHistory();
+            updateScanCount();
+        });
+
+        function switchSection(name) {
+            ['scanner', 'scan-history'].forEach(s => {
+                document.getElementById(`section-${s}`).style.display = s === name ? '' : 'none';
+            });
+            document.querySelectorAll('.sidebar-item').forEach((el, i) => {
+                el.classList.toggle('active', i === ['scanner', 'scan-history'].indexOf(name));
+            });
+            document.getElementById('section-title').textContent = name === 'scanner' ? 'QR Pass Scanner' : 'Scan History';
+        }
+
+        function startScan() {
+            const viewport = document.getElementById('scanner-viewport');
+            const idleDiv = document.getElementById('camera-idle');
+            if (idleDiv) idleDiv.style.display = 'none';
+
+            document.getElementById('btn-start-scan').style.display = 'none';
+            document.getElementById('btn-stop-scan').style.display = '';
+            document.getElementById('cam-status-badge').textContent = '🔴 Scanning...';
+            document.getElementById('cam-status-badge').style.color = 'var(--accent-red)';
+
+            // Create scanner div if not exists
+            let scannerDiv = document.getElementById('qr-scanner-div');
+            if (!scannerDiv) {
+                scannerDiv = document.createElement('div');
+                scannerDiv.id = 'qr-scanner-div';
+                viewport.appendChild(scannerDiv);
+            }
+
+            qrScanner = new Html5Qrcode('qr-scanner-div');
+            const config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.5 };
+
+            qrScanner.start({ facingMode: 'environment' }, config, onScanSuccess, onScanError)
+                .catch(err => {
+                    showToast('Camera access failed. Use manual token entry.', 'error');
+                    stopScan();
+                });
+
+            scanning = true;
+        }
+
+        function stopScan() {
+            if (qrScanner && scanning) {
+                qrScanner.stop().catch(() => { });
+                scanning = false;
+            }
+            document.getElementById('btn-start-scan').style.display = '';
+            document.getElementById('btn-stop-scan').style.display = 'none';
+            document.getElementById('cam-status-badge').textContent = 'Ready';
+            document.getElementById('cam-status-badge').style.color = 'var(--text-muted)';
+        }
+
+        function onScanSuccess(decodedText) {
+            stopScan();
+            processToken(decodedText);
+        }
+
+        function onScanError(error) {
+            // Silently ignore scan errors (continuous)
+        }
+
+        function processManualToken() {
+            const token = document.getElementById('manual-token').value.trim();
+            if (!token) { showToast('Please enter a token', 'error'); return; }
+            processToken(token);
+            document.getElementById('manual-token').value = '';
+        }
+
+        function processToken(rawText) {
+            let token = rawText;
+            // Try parsing JSON (from QR code data URL)
+            try {
+                const parsed = JSON.parse(rawText);
+                if (parsed.token) token = parsed.token;
+            } catch (e) { /* plain token string */ }
+
+            const db = getDB();
+            const pass = db.passes.find(p => p.qrToken === token);
+            const resultBox = document.getElementById('scan-result-box');
+            const resultIcon = document.getElementById('scan-result-icon');
+            const resultStatus = document.getElementById('scan-result-status');
+            const resultSub = document.getElementById('scan-result-sub');
+            const detailsCard = document.getElementById('pass-details-card');
+            const detailsContent = document.getElementById('pass-details-content');
+
+            resultBox.className = 'scan-result';
+            detailsCard.classList.remove('show');
+
+            let scanResult = { result: 'invalid', passengerName: 'Unknown', route: 'Unknown' };
+
+            if (!pass) {
+                // Invalid
+                resultBox.classList.add('invalid');
+                resultIcon.textContent = '⛔';
+                resultStatus.innerHTML = '<span style="color:var(--accent-red)">INVALID PASS</span>';
+                resultSub.textContent = `Token not found in system. Possible fraud or manual error.`;
+                scanResult.result = 'invalid';
+                showToast('❌ Invalid pass token!', 'error');
+            } else {
+                const user = db.users.find(u => u.id === pass.userId);
+                const userName = user?.name || 'Unknown';
+                scanResult.passengerName = userName;
+                scanResult.route = pass.route;
+                scanResult.passId = pass.id;
+
+                const expired = pass.status === 'expired' || (pass.validUntil && isExpired(pass.validUntil));
+
+                if (expired || pass.status === 'expired') {
+                    resultBox.classList.add('expired');
+                    resultIcon.textContent = '❌';
+                    resultStatus.innerHTML = '<span style="color:var(--accent-orange)">EXPIRED</span>';
+                    resultSub.textContent = `Pass expired on ${formatDate(pass.validUntil)}. Passenger needs to renew.`;
+                    scanResult.result = 'expired';
+                    showToast('⚠️ Pass is expired!', 'error');
+                } else if (pass.status === 'active') {
+                    resultBox.classList.add('valid');
+                    resultIcon.textContent = '✅';
+                    resultStatus.innerHTML = '<span style="color:var(--accent-green)">VALID PASS</span>';
+                    resultSub.textContent = `Pass is valid. Welcome aboard!`;
+                    scanResult.result = 'valid';
+                    showToast(`✅ Valid! ${userName} — ${pass.route}`, 'success');
+                } else {
+                    resultBox.classList.add('invalid');
+                    resultIcon.textContent = '⛔';
+                    resultStatus.innerHTML = `<span style="color:var(--accent-red)">${pass.status.toUpperCase()}</span>`;
+                    resultSub.textContent = `Pass status: ${pass.status}. Not valid for travel.`;
+                    scanResult.result = 'invalid';
+                    showToast(`Pass status: ${pass.status}`, 'error');
+                }
+
+                // Show details
+                if (pass.status === 'active' && !expired || pass) {
+                    detailsCard.classList.add('show');
+                    const daysLeft = pass.validUntil ? Math.max(0, Math.ceil((new Date(pass.validUntil) - new Date()) / 86400000)) : 0;
+                    detailsContent.innerHTML = `
+        <div class="pass-detail-row"><span class="pass-detail-label">Passenger Name</span><span class="pass-detail-value">${userName}</span></div>
+        <div class="pass-detail-row"><span class="pass-detail-label">Route</span><span class="pass-detail-value">${pass.route}</span></div>
+        <div class="pass-detail-row"><span class="pass-detail-label">Pass Type</span><span class="pass-detail-value">${pass.passType.charAt(0).toUpperCase() + pass.passType.slice(1)}</span></div>
+        <div class="pass-detail-row"><span class="pass-detail-label">Valid From</span><span class="pass-detail-value">${formatDate(pass.validFrom)}</span></div>
+        <div class="pass-detail-row"><span class="pass-detail-label">Valid Until</span><span class="pass-detail-value" style="color:${scanResult.result === 'valid' ? 'var(--accent-green)' : 'var(--accent-red)'};">${formatDate(pass.validUntil)}</span></div>
+        ${scanResult.result === 'valid' ? `<div class="pass-detail-row"><span class="pass-detail-label">Days Remaining</span><span class="pass-detail-value" style="color:var(--accent-blue);">${daysLeft} days</span></div>` : ''}
+        <div class="pass-detail-row"><span class="pass-detail-label">Token</span><span class="pass-detail-value" style="font-family:monospace;font-size:0.78rem;">${token}</span></div>
+      `;
+                }
+            }
+
+            // Log scan
+            logScan(scanResult, token);
+            renderRecentScans();
+            renderScanHistory();
+            updateScanCount();
+        }
+
+        function logScan(scanResult, token) {
+            const db = getDB();
+            db.scanLogs.push({
+                id: generateId('s'),
+                passId: scanResult.passId || token,
+                conductorId: currentSession.id,
+                scannedAt: new Date().toISOString(),
+                result: scanResult.result,
+                passengerName: scanResult.passengerName,
+                route: scanResult.route
+            });
+            saveDB(db);
+        }
+
+        function updateScanCount() {
+            const db = getDB();
+            const today = new Date().toISOString().split('T')[0];
+            const count = db.scanLogs.filter(l => l.conductorId === currentSession.id && l.scannedAt?.startsWith(today)).length;
+            document.getElementById('scan-count-badge').textContent = `${count} scans today`;
+        }
+
+        function renderRecentScans() {
+            const db = getDB();
+            const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
+            const mine = db.scanLogs.filter(l => l.conductorId === currentSession.id).slice(-5).reverse();
+            document.getElementById('recent-scans-mini').innerHTML = mine.map(l => `
+    <div class="mini-log-item">
+      <span>${icons[l.result] || '❓'}</span>
+      <div style="flex:1;">
+        <div style="color:var(--text-primary);">${l.passengerName || 'Unknown'}</div>
+        <div style="color:var(--text-muted);font-size:0.75rem;">${l.route || '—'}</div>
+      </div>
+      <div style="color:var(--text-muted);font-size:0.75rem;">${formatDateTime(l.scannedAt)}</div>
+    </div>`).join('') || '<div style="color:var(--text-muted);font-size:0.82rem;padding:8px 0;">No scans yet. Start scanning!</div>';
+        }
+
+        function renderScanHistory() {
+            const db = getDB();
+            const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
+            const resultColors = { valid: 'var(--accent-green)', expired: 'var(--accent-orange)', invalid: 'var(--accent-red)' };
+            const mine = db.scanLogs.filter(l => l.conductorId === currentSession.id).slice().reverse();
+            document.getElementById('scan-history-table').innerHTML = mine.map(l => `
+    <tr>
+      <td><span style="color:${resultColors[l.result]};font-weight:600;">${icons[l.result]} ${l.result?.toUpperCase()}</span></td>
+      <td style="font-weight:500;">${l.passengerName || 'Unknown'}</td>
+      <td style="font-size:0.85rem;color:var(--text-secondary);">${l.route || '—'}</td>
+      <td style="font-family:monospace;font-size:0.78rem;color:var(--text-muted);">${(l.passId || '').toString().slice(-10).toUpperCase()}</td>
+      <td style="font-size:0.82rem;color:var(--text-muted);">${formatDateTime(l.scannedAt)}</td>
+    </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No scans yet</td></tr>`;
+        }
+    </script>
+</body>
+
+</html>

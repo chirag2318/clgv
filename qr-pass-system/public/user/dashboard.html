@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Passes — QR PassPort</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <!-- QR Code via Server API -->
+    <style>
+        .passes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .qr-modal-content {
+            text-align: center;
+        }
+
+        .qr-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .qr-wrapper>div {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 0 40px rgba(79, 142, 247, 0.3);
+        }
+
+        .pass-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+        }
+
+        .pass-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .pass-info-label {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+        }
+
+        .pass-info-value {
+            font-weight: 600;
+        }
+
+        .apply-btn-wrap {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 24px;
+        }
+
+        .payment-band {
+            background: rgba(255, 145, 0, 0.08);
+            border: 1px solid rgba(255, 145, 0, 0.2);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .route-prices {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .price-chip {
+            background: rgba(79, 142, 247, 0.08);
+            border: 1px solid rgba(79, 142, 247, 0.15);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .price-chip.selected {
+            background: rgba(79, 142, 247, 0.2);
+            border-color: var(--accent-blue);
+        }
+
+        .price-chip:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .price-chip-type {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .price-chip-amount {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-top: 4px;
+        }
+
+        .price-chip-days {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">🚌</div>
+                <span>QR PassPort</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-item active" onclick="switchSection('my-passes')">
+                    <span class="icon">🎫</span><span>My Passes</span>
+                </div>
+                <div class="sidebar-item" onclick="switchSection('apply')">
+                    <span class="icon">➕</span><span>Apply for Pass</span>
+                </div>
+                <div class="sidebar-item" onclick="switchSection('payments')">
+                    <span class="icon">💳</span><span>Payments</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="sidebar-user-avatar">U</div>
+                    <div class="user-details">
+                        <div class="user-name" id="sidebar-user-name">User</div>
+                        <div class="user-role" id="sidebar-user-role">Passenger</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm btn-full" style="margin-top:10px;" onclick="logout()">🚪
+                    Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1 id="section-title">My Passes</h1>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <span id="header-user-greeting" style="font-size:0.85rem;color:var(--text-muted);"></span>
+                </div>
+            </header>
+
+            <div class="main-body">
+                <!-- My Passes Section -->
+                <div id="section-my-passes">
+                    <div class="apply-btn-wrap">
+                        <button class="btn btn-primary" onclick="switchSection('apply')">➕ Apply for New Pass</button>
+                    </div>
+                    <div id="passes-container"></div>
+                </div>
+
+                <!-- Apply Section -->
+                <div id="section-apply" style="display:none;max-width:560px;">
+                    <div class="card">
+                        <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:24px;">🎫 Apply for New Pass</h2>
+                        <form onsubmit="handleApply(event)">
+                            <div class="form-group">
+                                <label class="form-label">Route</label>
+                                <select class="form-select" id="apply-route" required>
+                                    <option value="">Select your route...</option>
+                                    <option>Andheri ↔ Dadar</option>
+                                    <option>Bandra ↔ CST</option>
+                                    <option>Borivali ↔ Churchgate</option>
+                                    <option>Thane ↔ VT</option>
+                                    <option>Kurla ↔ Chhatrapati Shivaji Terminus</option>
+                                    <option>Ghatkopar ↔ Versova</option>
+                                    <option>Mulund ↔ Dadar</option>
+                                    <option>Kandivali ↔ Bandra</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Pass Duration & Price</label>
+                                <div class="route-prices">
+                                    <div class="price-chip selected" data-type="monthly"
+                                        onclick="selectPassType('monthly', this)">
+                                        <div class="price-chip-type">Monthly</div>
+                                        <div class="price-chip-amount">₹450</div>
+                                        <div class="price-chip-days">30 days</div>
+                                    </div>
+                                    <div class="price-chip" data-type="quarterly"
+                                        onclick="selectPassType('quarterly', this)">
+                                        <div class="price-chip-type">Quarterly</div>
+                                        <div class="price-chip-amount">₹1,200</div>
+                                        <div class="price-chip-days">90 days</div>
+                                    </div>
+                                    <div class="price-chip" data-type="yearly" onclick="selectPassType('yearly', this)">
+                                        <div class="price-chip-type">Yearly</div>
+                                        <div class="price-chip-amount">₹4,500</div>
+                                        <div class="price-chip-days">365 days</div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="apply-type" value="monthly" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-input" id="apply-start-date" required />
+                            </div>
+                            <div
+                                style="background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.15);border-radius:var(--radius-md);padding:14px;margin-bottom:20px;font-size:0.85rem;color:var(--text-secondary);">
+                                ℹ️ After submitting, admin will review and approve your application. Payment link will
+                                be available once approved.
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-full">Submit Application →</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Payments Section -->
+                <div id="section-payments" style="display:none;">
+                    <div class="section-header">
+                        <h2 class="section-title">Payment History</h2>
+                        <p class="section-subtitle">All your pass payments</p>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Pass ID</th>
+                                    <th>Route</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payment-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- QR Modal -->
+    <div class="modal-overlay" id="qr-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">🎫 Your Digital Pass</h3>
+                <button class="modal-close" onclick="closeModal('qr-modal')">✕</button>
+            </div>
+            <div class="qr-modal-content">
+                <div class="qr-wrapper">
+                    <div id="qr-display"></div>
+                </div>
+                <div id="qr-pass-info"></div>
+                <div
+                    style="background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.2);border-radius:var(--radius-md);padding:12px;margin-top:16px;font-size:0.82rem;color:var(--accent-green);">
+                    ✅ Show this QR code to the conductor for scanning
+                </div>
+                <div style="margin-top:8px;">
+                    <div id="qr-token-display"
+                        style="font-family:monospace;font-size:0.75rem;color:var(--text-muted);word-break:break-all;margin-top:4px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="payment-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">💳 Complete Payment</h3>
+                <button class="modal-close" onclick="closeModal('payment-modal')">✕</button>
+            </div>
+            <div id="payment-modal-content"></div>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        let currentSession = null;
+        let currentPassId = null;
+        let selectedPassType = 'monthly';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            currentSession = requireAuth('user');
+            if (!currentSession) return;
+
+            initSidebar();
+            document.getElementById('header-user-greeting').textContent = `Welcome, ${currentSession.name}`;
+
+            // Set default start date to today
+            document.getElementById('apply-start-date').value = new Date().toISOString().split('T')[0];
+
+            renderPasses();
+            renderPayments();
+        });
+
+        function switchSection(name) {
+            ['my-passes', 'apply', 'payments'].forEach(s => {
+                document.getElementById(`section-${s}`).style.display = s === name ? '' : 'none';
+            });
+            document.querySelectorAll('.sidebar-item').forEach((el, i) => {
+                el.classList.toggle('active', i === ['my-passes', 'apply', 'payments'].indexOf(name));
+            });
+            const titles = { 'my-passes': 'My Passes', 'apply': 'Apply for Pass', 'payments': 'Payments' };
+            document.getElementById('section-title').textContent = titles[name] || '';
+        }
+
+        function selectPassType(type, el) {
+            selectedPassType = type;
+            document.getElementById('apply-type').value = type;
+            document.querySelectorAll('.price-chip').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function renderPasses() {
+            const db = getDB();
+            const userPasses = db.passes.filter(p => p.userId === currentSession.id);
+            const container = document.getElementById('passes-container');
+
+            // Auto-expire
+            userPasses.forEach(p => { if (p.status === 'active' && p.validUntil && isExpired(p.validUntil)) p.status = 'expired'; });
+
+            if (userPasses.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎫</div><h3>No passes yet</h3><p>Apply for your first digital pass!</p></div>`;
+                return;
+            }
+
+            container.innerHTML = `<div class="passes-grid">${userPasses.map(pass => `
+    <div class="pass-card">
+      <div class="pass-decorative">🚌</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div class="pass-number">PASS #${pass.id.slice(-6).toUpperCase()}</div>
+        ${getBadgeHTML(pass.status)}
+      </div>
+      <div class="pass-route">${pass.route}</div>
+      <div class="pass-meta">
+        <div class="pass-meta-item">
+          <span class="pass-meta-label">Type</span>
+          <span class="pass-meta-value">${pass.passType.charAt(0).toUpperCase() + pass.passType.slice(1)}</span>
+        </div>
+        <div class="pass-meta-item">
+          <span class="pass-meta-label">Valid Until</span>
+          <span class="pass-meta-value">${formatDate(pass.validUntil)}</span>
+        </div>
+        <div class="pass-meta-item">
+          <span class="pass-meta-label">Price</span>
+          <span class="pass-meta-value">₹${pass.price}</span>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+        ${pass.status === 'active' ? `<button class="btn btn-primary btn-sm" onclick="showQR('${pass.id}')">📱 View QR Code</button>` : ''}
+        ${pass.status === 'pending' ? `<button class="btn btn-sm" style="background:rgba(255,145,0,0.15);color:var(--accent-orange);border:1px solid rgba(255,145,0,0.3);" onclick="showPayment('${pass.id}')">💳 Pay Now</button>` : ''}
+        ${pass.status === 'expired' ? `<button class="btn btn-secondary btn-sm" onclick="switchSection('apply')">🔄 Renew</button>` : ''}
+      </div>
+    </div>
+  `).join('')}</div>`;
+        }
+
+        function renderPayments() {
+            const db = getDB();
+            const tbody = document.getElementById('payment-table-body');
+            const userPayments = db.payments.filter(p => p.userId === currentSession.id);
+            if (userPayments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px;">No payments yet</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = userPayments.map(pay => {
+                const pass = db.passes.find(p => p.id === pay.passId);
+                return `<tr>
+      <td style="font-family:monospace;font-size:0.82rem;">${pay.passId?.slice(-6).toUpperCase() || '-'}</td>
+      <td>${pass?.route || '-'}</td>
+      <td style="color:var(--accent-green);font-weight:600;">₹${pay.amount}</td>
+      <td><span class="badge badge-active">✅ Completed</span></td>
+      <td>${formatDate(pay.paidAt)}</td>
+    </tr>`;
+            }).join('');
+        }
+
+        async function showQR(passId) {
+            const db = getDB();
+            const pass = db.passes.find(p => p.id === passId);
+            const user = db.users.find(u => u.id === currentSession.id);
+            if (!pass || !pass.qrToken) { showToast('QR code not available', 'error'); return; }
+
+            // Show loading state
+            const qrDiv = document.getElementById('qr-display');
+            qrDiv.innerHTML = '<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#444;font-size:0.85rem;">Generating QR...</div>';
+            openModal('qr-modal');
+
+            try {
+                // Fetch QR from server API
+                const params = new URLSearchParams({
+                    token: pass.qrToken,
+                    passId: pass.id,
+                    route: pass.route,
+                    name: user?.name || 'Passenger',
+                    size: '200'
+                });
+                const res = await fetch(`/api/qr?${params}`);
+                const data = await res.json();
+
+                if (data.qrDataUrl) {
+                    qrDiv.innerHTML = `<img src="${data.qrDataUrl}" width="180" height="180" style="border-radius:8px;display:block;" alt="QR Code"/>`;
+                } else {
+                    qrDiv.innerHTML = '<div style="color:red;padding:20px;">QR generation failed</div>';
+                    showToast('QR generation failed. Is the server running?', 'error');
+                }
+            } catch (err) {
+                // Fallback: show token as text if server not available
+                qrDiv.innerHTML = `<div style="width:180px;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f5f5f5;border-radius:8px;gap:8px;">
+                    <div style="font-size:2rem;">📵</div>
+                    <div style="font-size:0.72rem;color:#333;text-align:center;padding:8px;">Server not running.<br/>Start with:<br/><code style='font-size:0.68rem;'>node server.js</code></div>
+                </div>`;
+                showToast('Could not reach server. Run: node server.js', 'error');
+            }
+
+            document.getElementById('qr-pass-info').innerHTML = `
+    <div style="background:rgba(255,255,255,0.04);border-radius:var(--radius-md);padding:16px;margin-top:4px;">
+      <div class="pass-info-row"><span class="pass-info-label">Passenger</span><span class="pass-info-value">${user?.name || '-'}</span></div>
+      <div class="pass-info-row"><span class="pass-info-label">Route</span><span class="pass-info-value">${pass.route}</span></div>
+      <div class="pass-info-row"><span class="pass-info-label">Type</span><span class="pass-info-value">${pass.passType}</span></div>
+      <div class="pass-info-row"><span class="pass-info-label">Valid Until</span><span class="pass-info-value" style="color:var(--accent-green);">${formatDate(pass.validUntil)}</span></div>
+    </div>`;
+            document.getElementById('qr-token-display').textContent = `Token: ${pass.qrToken}`;
+        }
+
+        function showPayment(passId) {
+            const db = getDB();
+            const pass = db.passes.find(p => p.id === passId);
+            if (!pass) return;
+            currentPassId = passId;
+            document.getElementById('payment-modal-content').innerHTML = `
+    <div class="payment-band">
+      <div>
+        <div style="font-size:0.82rem;color:var(--text-muted);">Amount Due</div>
+        <div style="font-size:1.8rem;font-weight:700;color:var(--accent-orange);">₹${pass.price}</div>
+      </div>
+      <div style="font-size:0.85rem;color:var(--text-secondary);text-align:right;">
+        ${pass.route}<br/><span style="color:var(--text-muted);">${pass.passType} pass</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Select Payment Method</label>
+      <select class="form-select" id="payment-method">
+        <option value="upi">UPI (GPay / PhonePe)</option>
+        <option value="card">Debit / Credit Card</option>
+        <option value="netbanking">Net Banking</option>
+        <option value="wallet">Mobile Wallet</option>
+      </select>
+    </div>
+    <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.15);border-radius:var(--radius-md);padding:12px;font-size:0.82rem;color:var(--text-secondary);margin-bottom:20px;">
+      🔒 This is a demo — no real payment will be processed. Click below to simulate payment.
+    </div>
+    <button class="btn btn-success btn-full" onclick="completePayment()">✅ Pay ₹${pass.price} Now</button>`;
+            openModal('payment-modal');
+        }
+
+        function completePayment() {
+            if (!currentPassId) return;
+            const db = getDB();
+            const pass = db.passes.find(p => p.id === currentPassId);
+            if (!pass) return;
+
+            // Activate pass
+            pass.status = 'active';
+            pass.qrToken = generateToken(currentPassId);
+            pass.validFrom = new Date().toISOString().split('T')[0];
+            pass.validUntil = addDays(new Date(), getPassDuration(pass.passType));
+
+            // Add payment record
+            db.payments.push({
+                id: generateId('pay'), passId: currentPassId, userId: currentSession.id,
+                amount: pass.price, status: 'completed', paidAt: new Date().toISOString()
+            });
+
+            saveDB(db);
+            closeModal('payment-modal');
+            showToast('Payment successful! Your QR pass is now active.', 'success');
+            renderPasses();
+            renderPayments();
+        }
+
+        function handleApply(e) {
+            e.preventDefault();
+            const route = document.getElementById('apply-route').value;
+            const type = document.getElementById('apply-type').value;
+            const startDate = document.getElementById('apply-start-date').value;
+            if (!route) { showToast('Please select a route', 'error'); return; }
+
+            const db = getDB();
+            const newPass = {
+                id: generateId('p'), userId: currentSession.id, route,
+                passType: type, status: 'pending',
+                validFrom: null, validUntil: null, qrToken: null,
+                price: getPassPrice(type), createdAt: new Date().toISOString().split('T')[0]
+            };
+            db.passes.push(newPass);
+            saveDB(db);
+            showToast('Pass application submitted! Admin will review shortly.', 'success');
+            switchSection('my-passes');
+            renderPasses();
+        }
+    </script>
+</body>
+
+</html>

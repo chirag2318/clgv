@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QR PassPort — Digital Bus & Train Pass</title>
+  <meta name="description" content="Say goodbye to paper passes. Get your digital bus and train pass with QR code instantly."/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    /* ===== Landing Page Specific ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 120px 40px 80px;
+      text-align: center; position: relative; z-index: 1;
+    }
+    .hero-content { max-width: 800px; margin: 0 auto; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3);
+      border-radius: 999px; padding: 6px 16px;
+      font-size: 0.8rem; font-weight: 600; color: var(--accent-blue);
+      margin-bottom: 28px; letter-spacing: 0.05em;
+      animation: fade-up 0.6s ease both;
+    }
+    .hero-title {
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      font-weight: 900; font-family: 'Space Grotesk', sans-serif;
+      line-height: 1.1; margin-bottom: 24px;
+      animation: fade-up 0.6s ease 0.1s both;
+    }
+    .hero-title .highlight {
+      background: var(--gradient-primary);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-subtitle {
+      font-size: 1.15rem; color: var(--text-secondary);
+      max-width: 560px; margin: 0 auto 40px;
+      line-height: 1.7;
+      animation: fade-up 0.6s ease 0.2s both;
+    }
+    .hero-buttons {
+      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+      animation: fade-up 0.6s ease 0.3s both;
+    }
+    .hero-stats {
+      display: flex; gap: 40px; justify-content: center;
+      margin-top: 64px; flex-wrap: wrap;
+      animation: fade-up 0.6s ease 0.4s both;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat-value { font-size: 2rem; font-weight: 800; font-family: 'Space Grotesk', sans-serif; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-stat-label { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Features */
+    .features { background: rgba(255,255,255,0.02); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .feature-card {
+      background: var(--bg-card); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl); padding: 32px;
+      transition: var(--transition);
+    }
+    .feature-card:hover { border-color: rgba(79,142,247,0.3); transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.3); }
+    .feature-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 20px;
+    }
+    .feature-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+    .feature-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+
+    /* How it works */
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: grid; grid-template-columns: 60px 1fr; gap: 24px;
+      padding: 28px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      align-items: start;
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--gradient-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.1rem; flex-shrink: 0;
+      box-shadow: 0 4px 20px rgba(79,142,247,0.4);
+    }
+    .step-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+    .step-desc { font-size: 0.9rem; color: var(--text-secondary); }
+
+    /* Roles */
+    .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+    .role-card {
+      background: var(--bg-card); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl); padding: 28px;
+      text-align: center; transition: var(--transition); cursor: pointer;
+    }
+    .role-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .role-card.user:hover { border-color: rgba(79,142,247,0.4); }
+    .role-card.admin:hover { border-color: rgba(108,99,255,0.4); }
+    .role-card.conductor:hover { border-color: rgba(0,230,118,0.4); }
+    .role-icon { font-size: 48px; margin-bottom: 16px; }
+    .role-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .role-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+    .role-action {
+      margin-top: 20px; padding: 10px 20px; border-radius: var(--radius-md);
+      font-weight: 600; font-size: 0.85rem; border: none; cursor: pointer; width: 100%;
+      transition: var(--transition);
+    }
+    .role-card.user .role-action { background: rgba(79,142,247,0.15); color: var(--accent-blue); }
+    .role-card.admin .role-action { background: rgba(108,99,255,0.15); color: var(--accent-indigo); }
+    .role-card.conductor .role-action { background: rgba(0,230,118,0.15); color: var(--accent-green); }
+    .role-action:hover { filter: brightness(1.3); }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--glass-border); padding: 32px 40px;
+      text-align: center; color: var(--text-muted); font-size: 0.85rem;
+      position: relative; z-index: 1;
+    }
+    footer span { color: var(--accent-blue); }
+
+    /* Demo notice */
+    .demo-bar {
+      background: rgba(255,145,0,0.1); border-top: 1px solid rgba(255,145,0,0.2);
+      border-bottom: 1px solid rgba(255,145,0,0.2);
+      padding: 10px 40px; text-align: center; font-size: 0.85rem; color: var(--accent-orange);
+      position: relative; z-index: 1;
+    }
+    .demo-bar code { background: rgba(255,145,0,0.15); padding: 2px 8px; border-radius: 4px; font-size: 0.82rem; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-logo">
+    <div class="nav-logo-icon">🚌</div>
+    QR PassPort
+  </div>
+  <div class="nav-links">
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#how-it-works" class="nav-link">How it Works</a>
+    <a href="#roles" class="nav-link">Login</a>
+    <button class="nav-btn" onclick="window.location.href='login.html'">Get Pass →</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">🎫 Digital Transit Passes — No Paper, No Hassle</div>
+    <h1 class="hero-title">
+      Your Bus Pass,<br/>
+      <span class="highlight">Now Digital & Smart</span>
+    </h1>
+    <p class="hero-subtitle">
+      Apply, pay, and carry your bus/train pass right on your phone as a secure QR code.
+      Conductors scan in seconds — no tearing, no losing, no faking.
+    </p>
+    <div class="hero-buttons">
+      <button class="btn btn-primary btn-lg" onclick="window.location.href='login.html'">
+        🎫 Get Your Digital Pass
+      </button>
+      <button class="btn btn-secondary btn-lg" onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'})">
+        How it Works ↓
+      </button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">3 Roles</div>
+        <div class="hero-stat-label">Admin · User · Conductor</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">QR</div>
+        <div class="hero-stat-label">Dynamic Secure Codes</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">100%</div>
+        <div class="hero-stat-label">Digital & Paperless</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Demo Credentials -->
+<div class="demo-bar">
+  🔑 Demo Credentials — Admin: <code>admin@pass.com</code> | User: <code>user@pass.com</code> | Conductor: <code>conductor@pass.com</code> | Password: <code>demo123</code>
+</div>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="section">
+    <div class="section-header" style="text-align:center; margin-bottom:48px;">
+      <h2 class="section-title" style="font-size:2rem;">Everything You Need, Nothing You Don't</h2>
+      <p class="section-subtitle" style="max-width:500px;margin:8px auto 0;">A complete transit pass management solution for the modern era.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(79,142,247,0.15);">📱</div>
+        <div class="feature-title">Digital QR Pass</div>
+        <p class="feature-desc">Each pass gets a unique, secure QR code. Always with you on your phone — no printing required.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(108,99,255,0.15);">🔒</div>
+        <div class="feature-title">Role-Based Access</div>
+        <p class="feature-desc">Three separate portals for Users, Admins, and Conductors — each with exactly the right permissions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(0,230,118,0.15);">✅</div>
+        <div class="feature-title">Instant Validation</div>
+        <p class="feature-desc">Conductors scan the QR and instantly see if the pass is Valid, Expired, or Invalid — under 1 second.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(0,212,255,0.15);">💳</div>
+        <div class="feature-title">Online Payment</div>
+        <p class="feature-desc">Apply and pay online. Choose Monthly (₹450), Quarterly (₹1200), or Yearly (₹4500) plans.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(255,145,0,0.15);">📊</div>
+        <div class="feature-title">Admin Analytics</div>
+        <p class="feature-desc">Real-time dashboard with total passes, active users, revenue tracking, and scan history.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(255,71,87,0.15);">🚫</div>
+        <div class="feature-title">Fraud Prevention</div>
+        <p class="feature-desc">Dynamic unique tokens make passes impossible to duplicate or forge. Each scan is logged.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section id="how-it-works">
+  <div class="section" style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;">
+    <div>
+      <div class="section-header">
+        <h2 class="section-title" style="font-size:2rem;">How It Works</h2>
+        <p class="section-subtitle">Three simple steps to go digital</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <div class="step-title">Register & Apply</div>
+            <p class="step-desc">Create your account and apply for a pass. Choose your route, duration (monthly/quarterly/yearly), and submit.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <div class="step-title">Pay Online</div>
+            <p class="step-desc">Complete payment online. Admin reviews and approves the pass. You receive your unique QR code instantly.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <div class="step-title">Conductor Scans</div>
+            <p class="step-desc">Show your phone's QR code to the conductor. They scan it and see your name, route, and validity status in real time.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <!-- Mock phone display -->
+      <div style="background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.2);border-radius:var(--radius-xl);padding:32px;text-align:center;">
+        <div style="font-size:3rem;margin-bottom:16px;">📲</div>
+        <div style="background:#1a2540;border-radius:16px;padding:24px;margin-bottom:16px;">
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.12em;">DIGITAL PASS · ACTIVE</div>
+          <div style="font-size:1.1rem;font-weight:700;margin-bottom:4px;">Rahul Sharma</div>
+          <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">Andheri ↔ Dadar · Monthly</div>
+          <!-- QR Placeholder -->
+          <div style="background:white;border-radius:12px;padding:12px;display:inline-block;margin-bottom:16px;">
+            <svg width="100" height="100" viewBox="0 0 100 100" style="display:block;">
+              <!-- QR-like pattern -->
+              <rect width="100" height="100" fill="white"/>
+              <rect x="5" y="5" width="35" height="35" fill="none" stroke="black" stroke-width="3"/>
+              <rect x="10" y="10" width="25" height="25" fill="black"/>
+              <rect x="60" y="5" width="35" height="35" fill="none" stroke="black" stroke-width="3"/>
+              <rect x="65" y="10" width="25" height="25" fill="black"/>
+              <rect x="5" y="60" width="35" height="35" fill="none" stroke="black" stroke-width="3"/>
+              <rect x="10" y="65" width="25" height="25" fill="black"/>
+              <!-- dots -->
+              <rect x="45" y="10" width="5" height="5" fill="black"/>
+              <rect x="45" y="20" width="5" height="5" fill="black"/>
+              <rect x="10" y="45" width="5" height="5" fill="black"/>
+              <rect x="20" y="45" width="5" height="5" fill="black"/>
+              <rect x="45" y="45" width="5" height="5" fill="black"/>
+              <rect x="55" y="45" width="5" height="5" fill="black"/>
+              <rect x="65" y="50" width="5" height="5" fill="black"/>
+              <rect x="75" y="55" width="5" height="5" fill="black"/>
+              <rect x="60" y="60" width="5" height="5" fill="black"/>
+              <rect x="80" y="60" width="5" height="5" fill="black"/>
+              <rect x="60" y="70" width="5" height="5" fill="black"/>
+              <rect x="70" y="80" width="5" height="5" fill="black"/>
+              <rect x="85" y="75" width="5" height="5" fill="black"/>
+              <rect x="30" y="50" width="5" height="5" fill="black"/>
+              <rect x="35" y="60" width="5" height="5" fill="black"/>
+            </svg>
+          </div>
+          <div style="font-size:0.75rem;color:var(--accent-green);font-weight:600;">✅ Valid until 15 Mar 2026</div>
+        </div>
+        <div style="font-size:0.82rem;color:var(--text-muted);">Shows on your phone. Conductor scans it.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Roles -->
+<section id="roles" style="background:rgba(255,255,255,0.02);border-top:1px solid var(--glass-border);">
+  <div class="section">
+    <div class="section-header" style="text-align:center;margin-bottom:40px;">
+      <h2 class="section-title" style="font-size:2rem;">Choose Your Role</h2>
+      <p class="section-subtitle">Each role has its dedicated portal and features</p>
+    </div>
+    <div class="roles-grid">
+      <div class="role-card user" onclick="goToLogin('user')">
+        <div class="role-icon">👤</div>
+        <div class="role-title">Passenger / User</div>
+        <p class="role-desc">Apply for bus/train passes, pay online, download QR codes, and manage all your passes.</p>
+        <button class="role-action" onclick="goToLogin('user')">Login as User →</button>
+      </div>
+      <div class="role-card admin" onclick="goToLogin('admin')">
+        <div class="role-icon">🛡️</div>
+        <div class="role-title">Administrator</div>
+        <p class="role-desc">Approve/reject pass applications, manage users, view revenue analytics and scan logs.</p>
+        <button class="role-action" onclick="goToLogin('admin')">Login as Admin →</button>
+      </div>
+      <div class="role-card conductor" onclick="goToLogin('conductor')">
+        <div class="role-icon">🔍</div>
+        <div class="role-title">Conductor</div>
+        <p class="role-desc">Scan passenger QR codes with device camera. Get instant valid/expired/invalid feedback.</p>
+        <button class="role-action" onclick="goToLogin('conductor')">Login as Conductor →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>QR PassPort — Digital Transit Pass System &bull; Built with <span>♥</span> for the Future of Public Transport</p>
+  <p style="margin-top:8px;">Demo Project — All data stored locally in your browser</p>
+</footer>
+
+<script src="js/app.js"></script>
+<script>
+  function goToLogin(role) {
+    window.location.href = `login.html?role=${role}`;
+  }
+
+  // Redirect if already logged in
+  const session = getSession();
+  if (session) {
+    const roleMap = { admin: 'admin/dashboard.html', user: 'user/dashboard.html', conductor: 'conductor/scanner.html' };
+    if (roleMap[session.role]) window.location.href = roleMap[session.role];
+  }
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>

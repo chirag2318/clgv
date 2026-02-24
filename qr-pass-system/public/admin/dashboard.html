@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard — QR PassPort</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <style>
+        .date-edit {
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .scan-log-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            transition: var(--transition);
+        }
+
+        .scan-log-item:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .scan-log-icon {
+            font-size: 1.3rem;
+            width: 32px;
+            text-align: center;
+        }
+
+        .scan-log-meta {
+            flex: 1;
+        }
+
+        .scan-log-main {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .scan-log-sub {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .scan-log-time {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            border: 1px solid var(--glass-border);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn.active {
+            background: rgba(79, 142, 247, 0.15);
+            border-color: rgba(79, 142, 247, 0.4);
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">🛡️</div>
+                <span>Admin Panel</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-item active" onclick="switchSection('overview')"><span
+                        class="icon">📊</span><span>Overview</span></div>
+                <div class="sidebar-item" onclick="switchSection('passes')"><span class="icon">🎫</span><span>All
+                        Passes</span></div>
+                <div class="sidebar-item" onclick="switchSection('users')"><span
+                        class="icon">👥</span><span>Users</span></div>
+                <div class="sidebar-item" onclick="switchSection('scanlogs')"><span class="icon">📡</span><span>Scan
+                        Logs</span></div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="sidebar-user-avatar"
+                        style="background:linear-gradient(135deg,#6c63ff,#4f8ef7);">A</div>
+                    <div class="user-details">
+                        <div class="user-name" id="sidebar-user-name">Admin</div>
+                        <div class="user-role" id="sidebar-user-role">Administrator</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm btn-full" style="margin-top:10px;" onclick="logout()">🚪
+                    Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1 id="section-title">Overview</h1>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-secondary btn-sm" onclick="resetDB();location.reload();">🔄 Reset Demo
+                        Data</button>
+                </div>
+            </header>
+
+            <div class="main-body">
+                <!-- Overview -->
+                <div id="section-overview">
+                    <div class="stats-grid" id="stats-grid" style="margin-bottom:32px;"></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                        <div class="card">
+                            <div
+                                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                                <h3 style="font-size:1rem;font-weight:600;">Recent Applications</h3>
+                                <button class="btn btn-secondary btn-sm" onclick="switchSection('passes')">View All
+                                    →</button>
+                            </div>
+                            <div id="recent-passes"></div>
+                        </div>
+                        <div class="card">
+                            <div
+                                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                                <h3 style="font-size:1rem;font-weight:600;">Recent Scans</h3>
+                                <button class="btn btn-secondary btn-sm" onclick="switchSection('scanlogs')">View All
+                                    →</button>
+                            </div>
+                            <div id="recent-scans"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Passes -->
+                <div id="section-passes" style="display:none;">
+                    <div class="filter-bar">
+                        <button class="filter-btn active" data-filter="all"
+                            onclick="filterPasses('all',this)">All</button>
+                        <button class="filter-btn" data-filter="pending" onclick="filterPasses('pending',this)">⏳
+                            Pending</button>
+                        <button class="filter-btn" data-filter="active" onclick="filterPasses('active',this)">✅
+                            Active</button>
+                        <button class="filter-btn" data-filter="expired" onclick="filterPasses('expired',this)">❌
+                            Expired</button>
+                        <button class="filter-btn" data-filter="rejected" onclick="filterPasses('rejected',this)">🚫
+                            Rejected</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Pass ID</th>
+                                    <th>Passenger</th>
+                                    <th>Route</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Valid Until</th>
+                                    <th>Price</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="passes-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Users -->
+                <div id="section-users" style="display:none;">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Passes</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Scan Logs -->
+                <div id="section-scanlogs" style="display:none;">
+                    <div class="card" style="padding:0;overflow:hidden;">
+                        <div id="scan-logs-list"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        let currentSession = null;
+        let currentFilter = 'all';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            currentSession = requireAuth('admin');
+            if (!currentSession) return;
+            initSidebar();
+            renderAll();
+        });
+
+        function switchSection(name) {
+            ['overview', 'passes', 'users', 'scanlogs'].forEach(s => {
+                document.getElementById(`section-${s}`).style.display = s === name ? '' : 'none';
+            });
+            document.querySelectorAll('.sidebar-item').forEach((el, i) => {
+                el.classList.toggle('active', i === ['overview', 'passes', 'users', 'scanlogs'].indexOf(name));
+            });
+            const titles = { overview: 'Overview', passes: 'All Passes', users: 'Users', scanlogs: 'Scan Logs' };
+            document.getElementById('section-title').textContent = titles[name] || '';
+        }
+
+        function renderAll() {
+            renderStats();
+            renderRecentPasses();
+            renderRecentScans();
+            renderPasses('all');
+            renderUsers();
+            renderScanLogs();
+        }
+
+        function renderStats() {
+            const db = getDB();
+            const totalPasses = db.passes.length;
+            const activePasses = db.passes.filter(p => p.status === 'active').length;
+            const pendingPasses = db.passes.filter(p => p.status === 'pending').length;
+            const totalRevenue = db.payments.filter(p => p.status === 'completed').reduce((s, p) => s + p.amount, 0);
+            const totalUsers = db.users.filter(u => u.role === 'user').length;
+            const totalScans = db.scanLogs.length;
+
+            const gradients = [
+                'var(--gradient-primary)', 'var(--gradient-green)', 'var(--gradient-orange)', 'var(--gradient-cyan)',
+                'linear-gradient(135deg,#6c63ff,#9c89ff)', 'var(--gradient-red)'
+            ];
+            const stats = [
+                { label: 'Total Passes', value: totalPasses, sub: `${pendingPasses} pending`, icon: '🎫' },
+                { label: 'Active Passes', value: activePasses, sub: 'Currently valid', icon: '✅' },
+                { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString('en-IN')}`, sub: 'All time', icon: '💰' },
+                { label: 'Total Users', value: totalUsers, sub: 'Registered passengers', icon: '👥' },
+                { label: 'Pending Review', value: pendingPasses, sub: 'Awaiting approval', icon: '⏳' },
+                { label: 'Total Scans', value: totalScans, sub: 'By conductors', icon: '📡' },
+            ];
+            document.getElementById('stats-grid').innerHTML = stats.map((s, i) => `
+    <div class="stat-card" style="border-color:rgba(255,255,255,0.06);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div class="stat-label">${s.label}</div>
+        <span style="font-size:1.4rem;">${s.icon}</span>
+      </div>
+      <div class="stat-value" style="background:${gradients[i]};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${s.value}</div>
+      <div class="stat-sub">${s.sub}</div>
+    </div>`).join('');
+        }
+
+        function getPassesWithUsers() {
+            const db = getDB();
+            return db.passes.map(pass => ({ ...pass, user: db.users.find(u => u.id === pass.userId) }));
+        }
+
+        function renderRecentPasses() {
+            const passes = getPassesWithUsers().slice(-5).reverse();
+            document.getElementById('recent-passes').innerHTML = passes.map(p => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <div>
+        <div style="font-size:0.85rem;font-weight:500;">${p.user?.name || 'Unknown'}</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">${p.route} · ${p.passType}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        ${getBadgeHTML(p.status)}
+        ${p.status === 'pending' ? `<button class="btn btn-sm" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border:1px solid rgba(0,230,118,0.3);" onclick="approvePass('${p.id}')">✅</button>` : ''}
+      </div>
+    </div>`).join('') || '<div class="empty-state" style="padding:20px;">No passes yet</div>';
+        }
+
+        function renderRecentScans() {
+            const db = getDB();
+            const logs = db.scanLogs.slice(-6).reverse();
+            const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
+            document.getElementById('recent-scans').innerHTML = logs.map(l => `
+    <div class="scan-log-item">
+      <div class="scan-log-icon">${icons[l.result] || '❓'}</div>
+      <div class="scan-log-meta">
+        <div class="scan-log-main">${l.passengerName || 'Unknown'}</div>
+        <div class="scan-log-sub">${l.route || 'Unknown route'}</div>
+      </div>
+      <div class="scan-log-time">${formatDateTime(l.scannedAt)}</div>
+    </div>`).join('') || '<div style="padding:20px;text-align:center;color:var(--text-muted);">No scans yet</div>';
+        }
+
+        function renderPasses(filter = 'all') {
+            currentFilter = filter;
+            const passes = getPassesWithUsers();
+            const filtered = filter === 'all' ? passes : passes.filter(p => p.status === filter);
+            document.getElementById('passes-table-body').innerHTML = filtered.map(p => `
+    <tr>
+      <td style="font-family:monospace;font-size:0.82rem;">${p.id.slice(-8).toUpperCase()}</td>
+      <td>
+        <div style="font-weight:500;font-size:0.9rem;">${p.user?.name || '—'}</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">${p.user?.email || ''}</div>
+      </td>
+      <td style="font-size:0.85rem;">${p.route}</td>
+      <td>${getBadgeTypeHTML(p.passType)}</td>
+      <td>${getBadgeHTML(p.status)}</td>
+      <td style="font-size:0.85rem;">${formatDate(p.validUntil)}</td>
+      <td style="color:var(--accent-green);font-weight:600;">₹${p.price}</td>
+      <td>
+        <div class="action-btns">
+          ${p.status === 'pending' ? `
+            <button class="btn btn-sm" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border:1px solid rgba(0,230,118,0.3);" onclick="approvePass('${p.id}')">✅ Approve</button>
+            <button class="btn btn-sm" style="background:rgba(255,71,87,0.1);color:var(--accent-red);border:1px solid rgba(255,71,87,0.25);" onclick="rejectPass('${p.id}')">❌ Reject</button>
+          ` : ''}
+          ${p.status === 'active' ? `<button class="btn btn-sm btn-secondary" onclick="expirePass('${p.id}')">⏰ Expire</button>` : ''}
+          <button class="btn btn-sm btn-secondary" onclick="deletePass('${p.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No passes found</td></tr>`;
+        }
+
+        function filterPasses(filter, el) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            renderPasses(filter);
+        }
+
+        function renderUsers() {
+            const db = getDB();
+            document.getElementById('users-table-body').innerHTML = db.users.map(u => {
+                const passCount = db.passes.filter(p => p.userId === u.id).length;
+                const roleColors = { admin: 'var(--accent-indigo)', user: 'var(--accent-blue)', conductor: 'var(--accent-green)' };
+                return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">${u.name?.charAt(0)?.toUpperCase()}</div>
+          <span style="font-weight:500;">${u.name}</span>
+        </div>
+      </td>
+      <td style="color:var(--text-secondary);font-size:0.88rem;">${u.email}</td>
+      <td><span style="color:${roleColors[u.role]};font-weight:600;font-size:0.85rem;">${u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span></td>
+      <td style="font-weight:600;">${passCount}</td>
+      <td style="color:var(--text-muted);font-size:0.85rem;">${formatDate(u.createdAt)}</td>
+    </tr>`;
+            }).join('');
+        }
+
+        function renderScanLogs() {
+            const db = getDB();
+            const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
+            const resultColors = { valid: 'var(--accent-green)', expired: 'var(--accent-orange)', invalid: 'var(--accent-red)' };
+            document.getElementById('scan-logs-list').innerHTML = db.scanLogs.slice().reverse().map(l => `
+    <div class="scan-log-item">
+      <div class="scan-log-icon">${icons[l.result] || '❓'}</div>
+      <div class="scan-log-meta">
+        <div class="scan-log-main">${l.passengerName || 'Unknown Passenger'} — <span style="color:${resultColors[l.result]};font-weight:600;">${l.result?.toUpperCase()}</span></div>
+        <div class="scan-log-sub">${l.route || 'Unknown route'} · Pass ID: ${l.passId?.slice(-8).toUpperCase() || '-'}</div>
+      </div>
+      <div class="scan-log-time">${formatDateTime(l.scannedAt)}</div>
+    </div>`).join('') || '<div style="padding:40px;text-align:center;color:var(--text-muted);">No scan logs yet</div>';
+        }
+
+        // Actions
+        function approvePass(passId) {
+            const db = getDB();
+            const pass = db.passes.find(p => p.id === passId);
+            if (!pass) return;
+            // Keep as pending but allow user to pay (or auto-activate for demo)
+            showToast('Checking pass...', 'info');
+        }
+
+        function approvePass(passId) {
+            const db = getDB();
+            const pass = db.passes.find(p => p.id === passId);
+            if (!pass) return;
+            pass.status = 'active';
+            pass.qrToken = generateToken(passId);
+            pass.validFrom = new Date().toISOString().split('T')[0];
+            pass.validUntil = addDays(new Date(), getPassDuration(pass.passType));
+            // Add payment record
+            const existingPay = db.payments.find(p => p.passId === passId);
+            if (!existingPay) {
+                db.payments.push({ id: generateId('pay'), passId, userId: pass.userId, amount: pass.price, status: 'completed', paidAt: new Date().toISOString() });
+            }
+            saveDB(db);
+            showToast('Pass approved and activated!', 'success');
+            renderAll();
+        }
+
+        function rejectPass(passId) {
+            const db = getDB();
+            const pass = db.passes.find(p => p.id === passId);
+            if (pass) { pass.status = 'rejected'; saveDB(db); showToast('Pass rejected.', 'error'); renderAll(); }
+        }
+
+        function expirePass(passId) {
+            const db = getDB();
+            const pass = db.passes.find(p => p.id === passId);
+            if (pass) {
+                pass.status = 'expired';
+                pass.validUntil = new Date(Date.now() - 86400000).toISOString().split('T')[0]; // yesterday
+                saveDB(db); showToast('Pass expired.', 'info'); renderAll();
+            }
+        }
+
+        function deletePass(passId) {
+            if (!confirm('Delete this pass?')) return;
+            const db = getDB();
+            db.passes = db.passes.filter(p => p.id !== passId);
+            saveDB(db); showToast('Pass deleted.', 'info'); renderAll();
+        }
+    </script>
+</body>
+
+</html>
