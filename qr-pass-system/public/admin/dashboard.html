@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard — QR PassPort</title>
+    <title>Admin Dashboard — BharatPass</title>
     <link rel="stylesheet" href="../css/style.css" />
     <style>
         .date-edit {
@@ -97,7 +97,8 @@
     <div class="dashboard">
         <aside class="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon">🛡️</div>
+                <div class="sidebar-logo-icon"><img src="../images/logo.jpeg" alt="BharatPass"
+                        style="width:32px;height:32px;border-radius:8px;object-fit:cover;" /></div>
                 <span>Admin Panel</span>
             </div>
             <nav class="sidebar-nav">
@@ -105,10 +106,10 @@
                         class="icon">📊</span><span>Overview</span></div>
                 <div class="sidebar-item" onclick="switchSection('passes')"><span class="icon">🎫</span><span>All
                         Passes</span></div>
-                <div class="sidebar-item" onclick="switchSection('users')"><span
-                        class="icon">👥</span><span>Users</span></div>
-                <div class="sidebar-item" onclick="switchSection('scanlogs')"><span class="icon">📡</span><span>Scan
-                        Logs</span></div>
+                <div class="sidebar-link" onclick="switchSection('users')">👥 User Management</div>
+                <div class="sidebar-link" onclick="switchSection('scanlogs')">📋 Scan Logs</div>
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-link" onclick="switchSection('settings')">⚙️ System Settings</div>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-info">
@@ -127,8 +128,9 @@
         <main class="main-content">
             <header class="main-header">
                 <h1 id="section-title">Overview</h1>
-                <div style="display:flex;gap:10px;">
-                    <button class="btn btn-secondary btn-sm" onclick="resetDB();location.reload();">🔄 Reset Demo
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+                    <button class="btn btn-secondary btn-sm" onclick="resetDB();location.reload();">🔄 Reset
                         Data</button>
                 </div>
             </header>
@@ -179,11 +181,12 @@
                                 <tr>
                                     <th>Pass ID</th>
                                     <th>Passenger</th>
-                                    <th>Route</th>
+                                    <th>City</th>
                                     <th>Type</th>
                                     <th>Status</th>
                                     <th>Valid Until</th>
                                     <th>Price</th>
+                                    <th>Payment ID</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -216,6 +219,49 @@
                         <div id="scan-logs-list"></div>
                     </div>
                 </div>
+
+                <!-- Settings Section -->
+                <section id="section-settings" style="display:none;">
+                    <div class="section-header">
+                        <h2 class="section-title">⚙️ System Settings</h2>
+                        <p class="section-subtitle">Manage cities and pass pricing</p>
+                    </div>
+
+                    <div
+                        style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:24px;margin-top:24px;">
+                        <!-- City Management -->
+                        <div class="card">
+                            <h3 style="margin-bottom:16px;">🏙️ City Management</h3>
+                            <div id="city-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+                                <!-- Cities will be loaded here -->
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="new-city-input" class="form-control"
+                                    placeholder="Add new city..." style="flex:1;">
+                                <button class="btn btn-primary" onclick="addCity()">Add</button>
+                            </div>
+                        </div>
+
+                        <!-- Price Management -->
+                        <div class="card">
+                            <h3 style="margin-bottom:16px;">💰 Pass Pricing (₹)</h3>
+                            <div class="form-group">
+                                <label class="form-label">Monthly Pass</label>
+                                <input type="number" id="price-monthly" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Quarterly Pass</label>
+                                <input type="number" id="price-quarterly" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Yearly Pass</label>
+                                <input type="number" id="price-yearly" class="form-control">
+                            </div>
+                            <button class="btn btn-primary btn-full" onclick="savePrices()"
+                                style="margin-top:16px;">Save Pricing</button>
+                        </div>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
@@ -224,6 +270,9 @@
     <script>
         let currentSession = null;
         let currentFilter = 'all';
+        let cachedPasses = [];
+        let cachedUsers = []; // Added for consistency, though not explicitly in instruction for this file
+        let currentSettings = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             currentSession = requireAuth('admin');
@@ -233,119 +282,101 @@
         });
 
         function switchSection(name) {
-            ['overview', 'passes', 'users', 'scanlogs'].forEach(s => {
+            ['overview', 'passes', 'users', 'scanlogs', 'settings'].forEach(s => {
                 document.getElementById(`section-${s}`).style.display = s === name ? '' : 'none';
             });
-            document.querySelectorAll('.sidebar-item').forEach((el, i) => {
-                el.classList.toggle('active', i === ['overview', 'passes', 'users', 'scanlogs'].indexOf(name));
+            document.querySelectorAll('.sidebar-item, .sidebar-link').forEach((el) => {
+                el.classList.remove('active');
             });
-            const titles = { overview: 'Overview', passes: 'All Passes', users: 'Users', scanlogs: 'Scan Logs' };
+            const activeElement = document.querySelector(`.sidebar-item[onclick="switchSection('${name}')"]`) ||
+                document.querySelector(`.sidebar-link[onclick="switchSection('${name}')"]`);
+            if (activeElement) {
+                activeElement.classList.add('active');
+            }
+            const titles = { overview: 'Overview', passes: 'All Passes', users: 'User Management', scanlogs: 'Scan Logs', settings: 'System Settings' };
             document.getElementById('section-title').textContent = titles[name] || '';
         }
 
-        function renderAll() {
-            renderStats();
-            renderRecentPasses();
-            renderRecentScans();
-            renderPasses('all');
-            renderUsers();
-            renderScanLogs();
+        async function renderAll() {
+            try {
+                // Fetch settings first
+                currentSettings = await fetch(`${API_URL}/api/settings`).then(r => r.json());
+
+                cachedPasses = await fetch(`${API_URL}/api/passes`).then(r => r.json());
+                cachedUsers = await fetch(`${API_URL}/api/admin/users`).then(r => r.json());
+                renderStats();
+                renderPasses();
+                renderUsers();
+                renderScanLogs();
+                renderRecentPasses();
+                renderSettings();
+            } catch (err) {
+                console.error('Failed to fetch data:', err);
+                showToast('Failed to load dashboard data', 'error');
+            }
         }
 
-        function renderStats() {
-            const db = getDB();
-            const totalPasses = db.passes.length;
-            const activePasses = db.passes.filter(p => p.status === 'active').length;
-            const pendingPasses = db.passes.filter(p => p.status === 'pending').length;
-            const totalRevenue = db.payments.filter(p => p.status === 'completed').reduce((s, p) => s + p.amount, 0);
-            const totalUsers = db.users.filter(u => u.role === 'user').length;
-            const totalScans = db.scanLogs.length;
-
-            const gradients = [
-                'var(--gradient-primary)', 'var(--gradient-green)', 'var(--gradient-orange)', 'var(--gradient-cyan)',
-                'linear-gradient(135deg,#6c63ff,#9c89ff)', 'var(--gradient-red)'
-            ];
-            const stats = [
-                { label: 'Total Passes', value: totalPasses, sub: `${pendingPasses} pending`, icon: '🎫' },
-                { label: 'Active Passes', value: activePasses, sub: 'Currently valid', icon: '✅' },
-                { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString('en-IN')}`, sub: 'All time', icon: '💰' },
-                { label: 'Total Users', value: totalUsers, sub: 'Registered passengers', icon: '👥' },
-                { label: 'Pending Review', value: pendingPasses, sub: 'Awaiting approval', icon: '⏳' },
-                { label: 'Total Scans', value: totalScans, sub: 'By conductors', icon: '📡' },
-            ];
-            document.getElementById('stats-grid').innerHTML = stats.map((s, i) => `
-    <div class="stat-card" style="border-color:rgba(255,255,255,0.06);">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div class="stat-label">${s.label}</div>
-        <span style="font-size:1.4rem;">${s.icon}</span>
-      </div>
-      <div class="stat-value" style="background:${gradients[i]};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${s.value}</div>
-      <div class="stat-sub">${s.sub}</div>
-    </div>`).join('');
+        async function renderStats() {
+            try {
+                const s = await fetch(`${API_URL}/api/admin/stats`).then(r => r.json());
+                const gradients = [
+                    'var(--gradient-primary)', 'var(--gradient-green)', 'var(--gradient-orange)',
+                    'var(--gradient-cyan)', 'linear-gradient(135deg,#6c63ff,#9c89ff)', 'var(--gradient-red)'
+                ];
+                const stats = [
+                    { label: 'Total Passes', value: s.totalPasses, sub: `${s.pendingPasses} pending`, icon: '🎫' },
+                    { label: 'Active Passes', value: s.activePasses, sub: 'Currently valid', icon: '✅' },
+                    { label: 'Total Revenue', value: `₹${(s.revenue || 0).toLocaleString('en-IN')}`, sub: 'All time', icon: '💰' },
+                    { label: 'Total Users', value: s.users, sub: 'Registered passengers', icon: '👥' },
+                    { label: 'Pending Review', value: s.pendingPasses, sub: 'Awaiting approval', icon: '⏳' },
+                    { label: 'Total Scans', value: s.logs, sub: 'By conductors', icon: '📡' },
+                ];
+                document.getElementById('stats-grid').innerHTML = stats.map((st, i) => `
+                    <div class="stat-card" style="border-color:rgba(255,255,255,0.06);">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                        <div class="stat-label">${st.label}</div>
+                        <span style="font-size:1.4rem;">${st.icon}</span>
+                    </div>
+                    <div class="stat-value" style="background:${gradients[i]};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${st.value}</div>
+                    <div class="stat-sub">${st.sub}</div>
+                    </div>`).join('');
+            } catch (err) { console.error('Stats error:', err); }
         }
 
-        function getPassesWithUsers() {
-            const db = getDB();
-            return db.passes.map(pass => ({ ...pass, user: db.users.find(u => u.id === pass.userId) }));
+        async function fetchAllPasses() {
+            cachedPasses = await fetch(`${API_URL}/api/passes`).then(r => r.json());
+            // Map userId to user object if needed, but the backend is currently simplistic.
+            return cachedPasses;
         }
 
-        function renderRecentPasses() {
-            const passes = getPassesWithUsers().slice(-5).reverse();
-            document.getElementById('recent-passes').innerHTML = passes.map(p => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-      <div>
-        <div style="font-size:0.85rem;font-weight:500;">${p.user?.name || 'Unknown'}</div>
-        <div style="font-size:0.75rem;color:var(--text-muted);">${p.route} · ${p.passType}</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        ${getBadgeHTML(p.status)}
-        ${p.status === 'pending' ? `<button class="btn btn-sm" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border:1px solid rgba(0,230,118,0.3);" onclick="approvePass('${p.id}')">✅</button>` : ''}
-      </div>
-    </div>`).join('') || '<div class="empty-state" style="padding:20px;">No passes yet</div>';
-        }
-
-        function renderRecentScans() {
-            const db = getDB();
-            const logs = db.scanLogs.slice(-6).reverse();
-            const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
-            document.getElementById('recent-scans').innerHTML = logs.map(l => `
-    <div class="scan-log-item">
-      <div class="scan-log-icon">${icons[l.result] || '❓'}</div>
-      <div class="scan-log-meta">
-        <div class="scan-log-main">${l.passengerName || 'Unknown'}</div>
-        <div class="scan-log-sub">${l.route || 'Unknown route'}</div>
-      </div>
-      <div class="scan-log-time">${formatDateTime(l.scannedAt)}</div>
-    </div>`).join('') || '<div style="padding:20px;text-align:center;color:var(--text-muted);">No scans yet</div>';
-        }
-
-        function renderPasses(filter = 'all') {
+        async function renderPasses(filter = 'all') {
             currentFilter = filter;
-            const passes = getPassesWithUsers();
-            const filtered = filter === 'all' ? passes : passes.filter(p => p.status === filter);
-            document.getElementById('passes-table-body').innerHTML = filtered.map(p => `
-    <tr>
-      <td style="font-family:monospace;font-size:0.82rem;">${p.id.slice(-8).toUpperCase()}</td>
-      <td>
-        <div style="font-weight:500;font-size:0.9rem;">${p.user?.name || '—'}</div>
-        <div style="font-size:0.75rem;color:var(--text-muted);">${p.user?.email || ''}</div>
-      </td>
-      <td style="font-size:0.85rem;">${p.route}</td>
-      <td>${getBadgeTypeHTML(p.passType)}</td>
-      <td>${getBadgeHTML(p.status)}</td>
-      <td style="font-size:0.85rem;">${formatDate(p.validUntil)}</td>
-      <td style="color:var(--accent-green);font-weight:600;">₹${p.price}</td>
-      <td>
-        <div class="action-btns">
-          ${p.status === 'pending' ? `
-            <button class="btn btn-sm" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border:1px solid rgba(0,230,118,0.3);" onclick="approvePass('${p.id}')">✅ Approve</button>
-            <button class="btn btn-sm" style="background:rgba(255,71,87,0.1);color:var(--accent-red);border:1px solid rgba(255,71,87,0.25);" onclick="rejectPass('${p.id}')">❌ Reject</button>
-          ` : ''}
-          ${p.status === 'active' ? `<button class="btn btn-sm btn-secondary" onclick="expirePass('${p.id}')">⏰ Expire</button>` : ''}
-          <button class="btn btn-sm btn-secondary" onclick="deletePass('${p.id}')">🗑️</button>
-        </div>
-      </td>
-    </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No passes found</td></tr>`;
+            try {
+                const passes = await fetchAllPasses();
+                const filtered = filter === 'all' ? passes : passes.filter(p => p.status === filter);
+                document.getElementById('passes-table-body').innerHTML = filtered.map(p => `
+                    <tr>
+                    <td style="font-family:monospace;font-size:0.82rem;">${(p.id || p._id).slice(-8).toUpperCase()}</td>
+                    <td>
+                        <div style="font-weight:500;font-size:0.9rem;">${p.name || 'Passenger'}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">ID: ${p.userId || '-'}</div>
+                    </td>
+                    <td style="font-size:0.85rem;">${p.city || p.route}</td>
+                    <td>${getBadgeTypeHTML(p.passType)}</td>
+                    <td>${getBadgeHTML(p.status)}</td>
+                    <td style="font-size:0.85rem;">${formatDate(p.validUntil)}</td>
+                    <td style="color:var(--accent-green);font-weight:600;">₹${p.price}</td>
+                    <td style="font-family:monospace;font-size:0.75rem;color:var(--text-muted);">${p.razorpayPaymentId || '-'}</td>
+                    <td>
+                        <div class="action-btns">
+                        ${p.status === 'pending' ? `
+                            <button class="btn btn-sm" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border:1px solid rgba(0,230,118,0.3);" onclick="approvePass('${p._id}')">✅ Approve</button>
+                            <button class="btn btn-sm" style="background:rgba(255,71,87,0.1);color:var(--accent-red);border:1px solid rgba(255,71,87,0.25);" onclick="rejectPass('${p._id}')">❌ Reject</button>
+                        ` : ''}
+                        </div>
+                    </td>
+                    </tr>`).join('') || `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">No passes found</td></tr>`;
+            } catch (err) { console.error(err); }
         }
 
         function filterPasses(filter, el) {
@@ -354,91 +385,163 @@
             renderPasses(filter);
         }
 
-        function renderUsers() {
-            const db = getDB();
-            document.getElementById('users-table-body').innerHTML = db.users.map(u => {
-                const passCount = db.passes.filter(p => p.userId === u.id).length;
-                const roleColors = { admin: 'var(--accent-indigo)', user: 'var(--accent-blue)', conductor: 'var(--accent-green)' };
-                return `<tr>
-      <td>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">${u.name?.charAt(0)?.toUpperCase()}</div>
-          <span style="font-weight:500;">${u.name}</span>
-        </div>
-      </td>
-      <td style="color:var(--text-secondary);font-size:0.88rem;">${u.email}</td>
-      <td><span style="color:${roleColors[u.role]};font-weight:600;font-size:0.85rem;">${u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span></td>
-      <td style="font-weight:600;">${passCount}</td>
-      <td style="color:var(--text-muted);font-size:0.85rem;">${formatDate(u.createdAt)}</td>
-    </tr>`;
-            }).join('');
+        async function renderUsers() {
+            try {
+                const users = await fetch(`${API_URL}/api/admin/users`).then(r => r.json());
+                document.getElementById('users-table-body').innerHTML = users.map(u => {
+                    const roleColors = { admin: 'var(--accent-indigo)', user: 'var(--accent-blue)', conductor: 'var(--accent-green)' };
+                    return `<tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:32px;height:32px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">${u.name?.charAt(0)?.toUpperCase()}</div>
+                            <span style="font-weight:500;">${u.name}</span>
+                            </div>
+                        </td>
+                        <td style="color:var(--text-secondary);font-size:0.88rem;">${u.email}</td>
+                        <td><span style="color:${roleColors[u.role]};font-weight:600;font-size:0.85rem;">${u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span></td>
+                        <td style="font-weight:600;">-</td>
+                        <td style="color:var(--text-muted);font-size:0.85rem;">${formatDate(u.createdAt)}</td>
+                    </tr>`;
+                }).join('');
+            } catch (err) { console.error(err); }
         }
 
-        function renderScanLogs() {
-            const db = getDB();
-            const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
-            const resultColors = { valid: 'var(--accent-green)', expired: 'var(--accent-orange)', invalid: 'var(--accent-red)' };
-            document.getElementById('scan-logs-list').innerHTML = db.scanLogs.slice().reverse().map(l => `
-    <div class="scan-log-item">
-      <div class="scan-log-icon">${icons[l.result] || '❓'}</div>
-      <div class="scan-log-meta">
-        <div class="scan-log-main">${l.passengerName || 'Unknown Passenger'} — <span style="color:${resultColors[l.result]};font-weight:600;">${l.result?.toUpperCase()}</span></div>
-        <div class="scan-log-sub">${l.route || 'Unknown route'} · Pass ID: ${l.passId?.slice(-8).toUpperCase() || '-'}</div>
-      </div>
-      <div class="scan-log-time">${formatDateTime(l.scannedAt)}</div>
-    </div>`).join('') || '<div style="padding:40px;text-align:center;color:var(--text-muted);">No scan logs yet</div>';
+        async function renderScanLogs() {
+            try {
+                const logs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
+                const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
+                const resultColors = { valid: 'var(--accent-green)', expired: 'var(--accent-orange)', invalid: 'var(--accent-red)' };
+                document.getElementById('scan-logs-list').innerHTML = logs.map(l => `
+                    <div class="scan-log-item">
+                    <div class="scan-log-icon">${icons[l.result] || '❓'}</div>
+                    <div class="scan-log-meta">
+                        <div class="scan-log-main">${l.passengerName || 'Passenger'} — <span style="color:${resultColors[l.result]};font-weight:600;">${l.result?.toUpperCase()}</span></div>
+                        <div class="scan-log-sub">${l.city || l.route || 'City'} · Pass ID: ${(l.passId || '-').slice(-8).toUpperCase()}</div>
+                    </div>
+                    <div class="scan-log-time">${formatDateTime(l.scannedAt)}</div>
+                    </div>`).join('') || '<div style="padding:40px;text-align:center;color:var(--text-muted);">No scan logs yet</div>';
+            } catch (err) { console.error(err); }
+        }
+
+        async function renderRecentPasses() {
+            const passes = cachedPasses.slice(0, 5);
+            document.getElementById('recent-passes').innerHTML = passes.map(p => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <div>
+                    <div style="font-size:0.85rem;font-weight:500;">Passenger ID: ${p.userId?.slice(-6) || 'New'}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">${p.city || p.route} · ${p.passType}</div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    ${getBadgeHTML(p.status)}
+                    ${p.status === 'pending' ? `<button class="btn btn-sm" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border:1px solid rgba(0,230,118,0.3);" onclick="approvePass('${p._id}')">✅</button>` : ''}
+                </div>
+                </div>`).join('') || '<div class="empty-state" style="padding:20px;">No passes yet</div>';
+        }
+
+        async function renderRecentScans() {
+            // Re-using scan log list for simplicity in recent scans for now
+            renderScanLogs();
+        }
+
+        function renderSettings() {
+            if (!currentSettings) return;
+
+            // Render Cities
+            const cityContainer = document.getElementById('city-list');
+            cityContainer.innerHTML = currentSettings.cities.map(city => `
+                <div style="background:rgba(255,255,255,0.05);padding:6px 12px;border-radius:20px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,0.1);">
+                    <span style="font-size:0.9rem;">${city}</span>
+                    <span style="cursor:pointer;color:var(--accent-red);font-weight:bold;" onclick="removeCity('${city}')">×</span>
+                </div>`).join('');
+
+            // Render Prices
+            document.getElementById('price-monthly').value = currentSettings.prices.monthly;
+            document.getElementById('price-quarterly').value = currentSettings.prices.quarterly;
+            document.getElementById('price-yearly').value = currentSettings.prices.yearly;
+        }
+
+        async function addCity() {
+            const input = document.getElementById('new-city-input');
+            const city = input.value.trim();
+            if (!city) return;
+            if (currentSettings.cities.includes(city)) {
+                showToast('City already exists', 'error');
+                return;
+            }
+
+            const newCities = [...currentSettings.cities, city].sort();
+            await updateSettings({ cities: newCities });
+            input.value = '';
+        }
+
+        async function removeCity(city) {
+            if (!confirm(`Are you sure you want to remove ${city}?`)) return;
+            const newCities = currentSettings.cities.filter(c => c !== city);
+            await updateSettings({ cities: newCities });
+        }
+
+        async function savePrices() {
+            const prices = {
+                monthly: parseInt(document.getElementById('price-monthly').value),
+                quarterly: parseInt(document.getElementById('price-quarterly').value),
+                yearly: parseInt(document.getElementById('price-yearly').value)
+            };
+            await updateSettings({ prices });
+        }
+
+        async function updateSettings(data) {
+            try {
+                const res = await apiPost('/api/admin/settings', data);
+                currentSettings = res;
+                renderSettings();
+                showToast('Settings updated!', 'success');
+            } catch (err) {
+                showToast('Failed to update settings', 'error');
+            }
         }
 
         // Actions
-        function approvePass(passId) {
-            const db = getDB();
-            const pass = db.passes.find(p => p.id === passId);
-            if (!pass) return;
-            // Keep as pending but allow user to pay (or auto-activate for demo)
-            showToast('Checking pass...', 'info');
+        async function approvePass(passId) {
+            try {
+                const pass = cachedPasses.find(p => p._id === passId);
+                if (!pass) return;
+
+                const durations = { monthly: 30, quarterly: 90, yearly: 365 };
+                const days = durations[pass.passType] || 30;
+
+                const qrToken = generateToken();
+                const validFrom = new Date().toISOString().split('T')[0];
+                const validUntil = addDays(new Date(), days);
+
+                await apiPost('/api/admin/approve-pass', {
+                    passId,
+                    validFrom,
+                    validUntil,
+                    qrToken
+                });
+                showToast('Pass approved and active!', 'success');
+                renderAll();
+            } catch (err) { showToast('Approval failed', 'error'); }
         }
 
-        function approvePass(passId) {
-            const db = getDB();
-            const pass = db.passes.find(p => p.id === passId);
-            if (!pass) return;
-            pass.status = 'active';
-            pass.qrToken = generateToken(passId);
-            pass.validFrom = new Date().toISOString().split('T')[0];
-            pass.validUntil = addDays(new Date(), getPassDuration(pass.passType));
-            // Add payment record
-            const existingPay = db.payments.find(p => p.passId === passId);
-            if (!existingPay) {
-                db.payments.push({ id: generateId('pay'), passId, userId: pass.userId, amount: pass.price, status: 'completed', paidAt: new Date().toISOString() });
-            }
-            saveDB(db);
-            showToast('Pass approved and activated!', 'success');
-            renderAll();
+        async function rejectPass(passId) {
+            try {
+                await apiPost('/api/admin/reject-pass', { passId });
+                showToast('Pass rejected.', 'info');
+                renderAll();
+            } catch (err) { showToast('Rejection failed', 'error'); }
         }
 
-        function rejectPass(passId) {
-            const db = getDB();
-            const pass = db.passes.find(p => p.id === passId);
-            if (pass) { pass.status = 'rejected'; saveDB(db); showToast('Pass rejected.', 'error'); renderAll(); }
-        }
-
-        function expirePass(passId) {
-            const db = getDB();
-            const pass = db.passes.find(p => p.id === passId);
-            if (pass) {
-                pass.status = 'expired';
-                pass.validUntil = new Date(Date.now() - 86400000).toISOString().split('T')[0]; // yesterday
-                saveDB(db); showToast('Pass expired.', 'info'); renderAll();
-            }
-        }
-
-        function deletePass(passId) {
-            if (!confirm('Delete this pass?')) return;
-            const db = getDB();
-            db.passes = db.passes.filter(p => p.id !== passId);
-            saveDB(db); showToast('Pass deleted.', 'info'); renderAll();
+        async function resetDB() {
+            if (!confirm('This will clear all registered data and reset to demo state. Continue?')) return;
+            try {
+                await apiPost('/api/admin/seed', {});
+                showToast('Database reset successfully!', 'success');
+                location.reload();
+            } catch (err) { showToast('Reset failed', 'error'); }
         }
     </script>
 </body>
 
 </html>
+```

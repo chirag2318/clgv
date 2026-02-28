@@ -1,376 +1,627 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>QR PassPort — Digital Bus & Train Pass</title>
-  <meta name="description" content="Say goodbye to paper passes. Get your digital bus and train pass with QR code instantly."/>
-  <link rel="stylesheet" href="css/style.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BharatPass — Digital Bus & Train Pass</title>
+  <meta name="description"
+    content="Apply for your digital bus or train pass online. Get a secure QR code instantly. No paper, no queues." />
+  <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* ===== Landing Page Specific ===== */
+    /* ===== Landing Page ===== */
     .hero {
       min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-      padding: 120px 40px 80px;
-      text-align: center; position: relative; z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 24px 80px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
     }
-    .hero-content { max-width: 800px; margin: 0 auto; }
+
+    .hero-content {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
     .hero-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3);
-      border-radius: 999px; padding: 6px 16px;
-      font-size: 0.8rem; font-weight: 600; color: var(--accent-blue);
-      margin-bottom: 28px; letter-spacing: 0.05em;
-      animation: fade-up 0.6s ease both;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(79, 142, 247, 0.12);
+      border: 1px solid rgba(79, 142, 247, 0.3);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+      margin-bottom: 28px;
+      letter-spacing: 0.04em;
+      animation: fade-up 0.5s ease both;
     }
+
     .hero-title {
-      font-size: clamp(2.5rem, 7vw, 5rem);
-      font-weight: 900; font-family: 'Space Grotesk', sans-serif;
-      line-height: 1.1; margin-bottom: 24px;
-      animation: fade-up 0.6s ease 0.1s both;
+      font-size: clamp(2.4rem, 6.5vw, 4.8rem);
+      font-weight: 900;
+      font-family: 'Space Grotesk', sans-serif;
+      line-height: 1.1;
+      margin-bottom: 22px;
+      animation: fade-up 0.5s ease 0.1s both;
     }
+
     .hero-title .highlight {
       background: var(--gradient-primary);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-    .hero-subtitle {
-      font-size: 1.15rem; color: var(--text-secondary);
-      max-width: 560px; margin: 0 auto 40px;
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 500px;
+      margin: 0 auto 40px;
       line-height: 1.7;
-      animation: fade-up 0.6s ease 0.2s both;
+      animation: fade-up 0.5s ease 0.2s both;
     }
-    .hero-buttons {
-      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
-      animation: fade-up 0.6s ease 0.3s both;
+
+    .hero-cta {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fade-up 0.5s ease 0.3s both;
     }
-    .hero-stats {
-      display: flex; gap: 40px; justify-content: center;
-      margin-top: 64px; flex-wrap: wrap;
-      animation: fade-up 0.6s ease 0.4s both;
+
+    .hero-trust {
+      margin-top: 48px;
+      display: flex;
+      gap: 28px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fade-up 0.5s ease 0.4s both;
     }
-    .hero-stat { text-align: center; }
-    .hero-stat-value { font-size: 2rem; font-weight: 800; font-family: 'Space Grotesk', sans-serif; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .hero-stat-label { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .trust-item span {
+      color: var(--accent-green);
+      font-size: 1rem;
+    }
 
     @keyframes fade-up {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
-    /* Features */
-    .features { background: rgba(255,255,255,0.02); border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); }
-    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
-    .feature-card {
-      background: var(--bg-card); border: 1px solid var(--glass-border);
-      border-radius: var(--radius-xl); padding: 32px;
+    /* ===== Pricing ===== */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .plan-card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 32px 28px;
+      text-align: center;
       transition: var(--transition);
+      position: relative;
     }
-    .feature-card:hover { border-color: rgba(79,142,247,0.3); transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.3); }
-    .feature-icon {
-      width: 56px; height: 56px; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; margin-bottom: 20px;
-    }
-    .feature-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
-    .feature-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
 
-    /* How it works */
-    .steps { display: flex; flex-direction: column; gap: 0; }
-    .step {
-      display: grid; grid-template-columns: 60px 1fr; gap: 24px;
-      padding: 28px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
-      align-items: start;
+    .plan-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+      border-color: var(--glass-border-hover);
     }
-    .step:last-child { border-bottom: none; }
-    .step-num {
-      width: 52px; height: 52px; border-radius: 50%;
+
+    .plan-card.popular {
+      border-color: var(--accent-blue);
+      background: rgba(79, 142, 247, 0.06);
+    }
+
+    .popular-tag {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
       background: var(--gradient-primary);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 1.1rem; flex-shrink: 0;
-      box-shadow: 0 4px 20px rgba(79,142,247,0.4);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 999px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
-    .step-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
-    .step-desc { font-size: 0.9rem; color: var(--text-secondary); }
 
-    /* Roles */
-    .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-    .role-card {
-      background: var(--bg-card); border: 1px solid var(--glass-border);
-      border-radius: var(--radius-xl); padding: 28px;
-      text-align: center; transition: var(--transition); cursor: pointer;
+    .plan-name {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
     }
-    .role-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-    .role-card.user:hover { border-color: rgba(79,142,247,0.4); }
-    .role-card.admin:hover { border-color: rgba(108,99,255,0.4); }
-    .role-card.conductor:hover { border-color: rgba(0,230,118,0.4); }
-    .role-icon { font-size: 48px; margin-bottom: 16px; }
-    .role-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
-    .role-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
-    .role-action {
-      margin-top: 20px; padding: 10px 20px; border-radius: var(--radius-md);
-      font-weight: 600; font-size: 0.85rem; border: none; cursor: pointer; width: 100%;
+
+    .plan-price {
+      font-size: 3rem;
+      font-weight: 900;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .plan-price sup {
+      font-size: 1.4rem;
+      vertical-align: super;
+      font-weight: 700;
+    }
+
+    .plan-duration {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+    }
+
+    .plan-features {
+      list-style: none;
+      text-align: left;
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .plan-features li {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .plan-features li::before {
+      content: '✅';
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    /* ===== Benefits ===== */
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .benefit-card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 28px;
       transition: var(--transition);
     }
-    .role-card.user .role-action { background: rgba(79,142,247,0.15); color: var(--accent-blue); }
-    .role-card.admin .role-action { background: rgba(108,99,255,0.15); color: var(--accent-indigo); }
-    .role-card.conductor .role-action { background: rgba(0,230,118,0.15); color: var(--accent-green); }
-    .role-action:hover { filter: brightness(1.3); }
 
-    /* Footer */
+    .benefit-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--glass-border-hover);
+    }
+
+    .benefit-icon {
+      font-size: 2.2rem;
+      margin-bottom: 16px;
+    }
+
+    .benefit-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .benefit-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ===== Steps ===== */
+    .steps-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0;
+    }
+
+    .step-item {
+      text-align: center;
+      padding: 28px 20px;
+      position: relative;
+    }
+
+    .step-item:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -8px;
+      top: 44px;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+    }
+
+    .step-num {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      margin: 0 auto 16px;
+      box-shadow: 0 6px 24px rgba(79, 142, 247, 0.4);
+    }
+
+    .step-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .step-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ===== CTA Strip ===== */
+    .cta-strip {
+      background: var(--gradient-primary);
+      border-radius: var(--radius-xl);
+      padding: 56px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-strip::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .cta-strip h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .cta-strip p {
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 32px;
+      position: relative;
+    }
+
+    .cta-strip .btn-white {
+      background: white;
+      color: var(--accent-blue);
+      font-weight: 700;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .cta-strip .btn-white:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* ===== Features section (same as before) ===== */
+    .features {
+      border-top: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-border);
+    }
+
     footer {
-      border-top: 1px solid var(--glass-border); padding: 32px 40px;
-      text-align: center; color: var(--text-muted); font-size: 0.85rem;
-      position: relative; z-index: 1;
+      border-top: 1px solid var(--glass-border);
+      padding: 32px 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      position: relative;
+      z-index: 1;
     }
-    footer span { color: var(--accent-blue); }
 
-    /* Demo notice */
-    .demo-bar {
-      background: rgba(255,145,0,0.1); border-top: 1px solid rgba(255,145,0,0.2);
-      border-bottom: 1px solid rgba(255,145,0,0.2);
-      padding: 10px 40px; text-align: center; font-size: 0.85rem; color: var(--accent-orange);
-      position: relative; z-index: 1;
+    footer .footer-links {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
     }
-    .demo-bar code { background: rgba(255,145,0,0.15); padding: 2px 8px; border-radius: 4px; font-size: 0.82rem; }
+
+    footer .footer-links a {
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    footer .footer-links a:hover {
+      color: var(--accent-blue);
+    }
+
+    footer span {
+      color: var(--accent-blue);
+    }
+
+    @media (max-width: 600px) {
+      .steps-row {
+        grid-template-columns: 1fr;
+      }
+
+      .step-item::after {
+        display: none;
+      }
+
+      .cta-strip {
+        padding: 40px 20px;
+      }
+    }
   </style>
 </head>
+
 <body>
-<div class="bg-orbs">
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
-</div>
-
-<!-- Navbar -->
-<nav class="navbar">
-  <div class="nav-logo">
-    <div class="nav-logo-icon">🚌</div>
-    QR PassPort
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
   </div>
-  <div class="nav-links">
-    <a href="#features" class="nav-link">Features</a>
-    <a href="#how-it-works" class="nav-link">How it Works</a>
-    <a href="#roles" class="nav-link">Login</a>
-    <button class="nav-btn" onclick="window.location.href='login.html'">Get Pass →</button>
-  </div>
-</nav>
 
-<!-- Hero -->
-<section class="hero">
-  <div class="hero-content">
-    <div class="hero-badge">🎫 Digital Transit Passes — No Paper, No Hassle</div>
-    <h1 class="hero-title">
-      Your Bus Pass,<br/>
-      <span class="highlight">Now Digital & Smart</span>
-    </h1>
-    <p class="hero-subtitle">
-      Apply, pay, and carry your bus/train pass right on your phone as a secure QR code.
-      Conductors scan in seconds — no tearing, no losing, no faking.
-    </p>
-    <div class="hero-buttons">
-      <button class="btn btn-primary btn-lg" onclick="window.location.href='login.html'">
-        🎫 Get Your Digital Pass
-      </button>
-      <button class="btn btn-secondary btn-lg" onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'})">
-        How it Works ↓
-      </button>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-logo">
+      <div class="nav-logo-icon"><img src="images/logo.jpeg" alt="BharatPass"
+          style="width:32px;height:32px;border-radius:8px;object-fit:cover;" /></div>
+      BharatPass
     </div>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="hero-stat-value">3 Roles</div>
-        <div class="hero-stat-label">Admin · User · Conductor</div>
+    <div class="nav-links">
+      <a href="#how-it-works" class="nav-link">How it Works</a>
+      <a href="#pricing" class="nav-link">Plans</a>
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+      <button class="nav-btn" onclick="window.location.href='login.html'">Get My Pass →</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">🇮🇳 India's Digital Transit Pass</div>
+      <h1 class="hero-title">
+        Bus Pass ab<br />
+        <span class="highlight">Phone Mein, Pocket Mein</span>
+      </h1>
+      <p class="hero-sub">
+        Online apply karo, UPI se pay karo, aur apna QR Pass pao seconds mein.
+        Koi queue nahi, koi paper nahi — sirf ek scan aur travel!
+      </p>
+      <div class="hero-cta">
+        <button class="btn btn-primary btn-lg" onclick="window.location.href='login.html'">
+          🎫 Get Your Pass Now
+        </button>
+        <button class="btn btn-secondary btn-lg"
+          onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'})">
+          How it Works ↓
+        </button>
       </div>
-      <div class="hero-stat">
-        <div class="hero-stat-value">QR</div>
-        <div class="hero-stat-label">Dynamic Secure Codes</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-value">100%</div>
-        <div class="hero-stat-label">Digital & Paperless</div>
+      <div class="hero-trust">
+        <div class="trust-item"><span>✅</span> Secure Razorpay Payment</div>
+        <div class="trust-item"><span>✅</span> Instant QR Code</div>
+        <div class="trust-item"><span>✅</span> Valid on All Cities</div>
+        <div class="trust-item"><span>✅</span> No Paper Needed</div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Demo Credentials -->
-<div class="demo-bar">
-  🔑 Demo Credentials — Admin: <code>admin@pass.com</code> | User: <code>user@pass.com</code> | Conductor: <code>conductor@pass.com</code> | Password: <code>demo123</code>
-</div>
-
-<!-- Features -->
-<section class="features" id="features">
-  <div class="section">
-    <div class="section-header" style="text-align:center; margin-bottom:48px;">
-      <h2 class="section-title" style="font-size:2rem;">Everything You Need, Nothing You Don't</h2>
-      <p class="section-subtitle" style="max-width:500px;margin:8px auto 0;">A complete transit pass management solution for the modern era.</p>
-    </div>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(79,142,247,0.15);">📱</div>
-        <div class="feature-title">Digital QR Pass</div>
-        <p class="feature-desc">Each pass gets a unique, secure QR code. Always with you on your phone — no printing required.</p>
+  <!-- How it Works -->
+  <section id="how-it-works" class="features">
+    <div class="section">
+      <div class="section-header" style="text-align:center;margin-bottom:48px;">
+        <h2 class="section-title" style="font-size:2rem;">3 Simple Steps</h2>
+        <p class="section-subtitle">Pass lena ab itna aasan kabhi nahi tha</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(108,99,255,0.15);">🔒</div>
-        <div class="feature-title">Role-Based Access</div>
-        <p class="feature-desc">Three separate portals for Users, Admins, and Conductors — each with exactly the right permissions.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(0,230,118,0.15);">✅</div>
-        <div class="feature-title">Instant Validation</div>
-        <p class="feature-desc">Conductors scan the QR and instantly see if the pass is Valid, Expired, or Invalid — under 1 second.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(0,212,255,0.15);">💳</div>
-        <div class="feature-title">Online Payment</div>
-        <p class="feature-desc">Apply and pay online. Choose Monthly (₹450), Quarterly (₹1200), or Yearly (₹4500) plans.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(255,145,0,0.15);">📊</div>
-        <div class="feature-title">Admin Analytics</div>
-        <p class="feature-desc">Real-time dashboard with total passes, active users, revenue tracking, and scan history.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:rgba(255,71,87,0.15);">🚫</div>
-        <div class="feature-title">Fraud Prevention</div>
-        <p class="feature-desc">Dynamic unique tokens make passes impossible to duplicate or forge. Each scan is logged.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- How It Works -->
-<section id="how-it-works">
-  <div class="section" style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;">
-    <div>
-      <div class="section-header">
-        <h2 class="section-title" style="font-size:2rem;">How It Works</h2>
-        <p class="section-subtitle">Three simple steps to go digital</p>
-      </div>
-      <div class="steps">
-        <div class="step">
+      <div class="steps-row">
+        <div class="step-item">
           <div class="step-num">1</div>
-          <div>
-            <div class="step-title">Register & Apply</div>
-            <p class="step-desc">Create your account and apply for a pass. Choose your route, duration (monthly/quarterly/yearly), and submit.</p>
-          </div>
+          <div class="step-title">Register & Apply</div>
+          <p class="step-desc">Free account banao. Apna city select karo aur pass ke liye apply karo.</p>
         </div>
-        <div class="step">
+        <div class="step-item">
           <div class="step-num">2</div>
-          <div>
-            <div class="step-title">Pay Online</div>
-            <p class="step-desc">Complete payment online. Admin reviews and approves the pass. You receive your unique QR code instantly.</p>
-          </div>
+          <div class="step-title">Pay Online</div>
+          <p class="step-desc">UPI, Card ya Netbanking se payment karo. 100% secure — Razorpay powered.</p>
         </div>
-        <div class="step">
+        <div class="step-item">
           <div class="step-num">3</div>
-          <div>
-            <div class="step-title">Conductor Scans</div>
-            <p class="step-desc">Show your phone's QR code to the conductor. They scan it and see your name, route, and validity status in real time.</p>
-          </div>
+          <div class="step-title">Show & Travel</div>
+          <p class="step-desc">Apna QR code dikhao. Conductor 1 second mein scan karega. Done!</p>
         </div>
       </div>
     </div>
-    <div>
-      <!-- Mock phone display -->
-      <div style="background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.2);border-radius:var(--radius-xl);padding:32px;text-align:center;">
-        <div style="font-size:3rem;margin-bottom:16px;">📲</div>
-        <div style="background:#1a2540;border-radius:16px;padding:24px;margin-bottom:16px;">
-          <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.12em;">DIGITAL PASS · ACTIVE</div>
-          <div style="font-size:1.1rem;font-weight:700;margin-bottom:4px;">Rahul Sharma</div>
-          <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">Andheri ↔ Dadar · Monthly</div>
-          <!-- QR Placeholder -->
-          <div style="background:white;border-radius:12px;padding:12px;display:inline-block;margin-bottom:16px;">
-            <svg width="100" height="100" viewBox="0 0 100 100" style="display:block;">
-              <!-- QR-like pattern -->
-              <rect width="100" height="100" fill="white"/>
-              <rect x="5" y="5" width="35" height="35" fill="none" stroke="black" stroke-width="3"/>
-              <rect x="10" y="10" width="25" height="25" fill="black"/>
-              <rect x="60" y="5" width="35" height="35" fill="none" stroke="black" stroke-width="3"/>
-              <rect x="65" y="10" width="25" height="25" fill="black"/>
-              <rect x="5" y="60" width="35" height="35" fill="none" stroke="black" stroke-width="3"/>
-              <rect x="10" y="65" width="25" height="25" fill="black"/>
-              <!-- dots -->
-              <rect x="45" y="10" width="5" height="5" fill="black"/>
-              <rect x="45" y="20" width="5" height="5" fill="black"/>
-              <rect x="10" y="45" width="5" height="5" fill="black"/>
-              <rect x="20" y="45" width="5" height="5" fill="black"/>
-              <rect x="45" y="45" width="5" height="5" fill="black"/>
-              <rect x="55" y="45" width="5" height="5" fill="black"/>
-              <rect x="65" y="50" width="5" height="5" fill="black"/>
-              <rect x="75" y="55" width="5" height="5" fill="black"/>
-              <rect x="60" y="60" width="5" height="5" fill="black"/>
-              <rect x="80" y="60" width="5" height="5" fill="black"/>
-              <rect x="60" y="70" width="5" height="5" fill="black"/>
-              <rect x="70" y="80" width="5" height="5" fill="black"/>
-              <rect x="85" y="75" width="5" height="5" fill="black"/>
-              <rect x="30" y="50" width="5" height="5" fill="black"/>
-              <rect x="35" y="60" width="5" height="5" fill="black"/>
-            </svg>
-          </div>
-          <div style="font-size:0.75rem;color:var(--accent-green);font-weight:600;">✅ Valid until 15 Mar 2026</div>
+  </section>
+
+  <!-- Benefits -->
+  <section id="features">
+    <div class="section">
+      <div class="section-header" style="text-align:center;margin-bottom:48px;">
+        <h2 class="section-title" style="font-size:2rem;">Kyun BharatPass?</h2>
+        <p class="section-subtitle">Paper pass se 10x better</p>
+      </div>
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-icon">📱</div>
+          <div class="benefit-title">Phone Mein Hamesha</div>
+          <p class="benefit-desc">Pass kabhi nahi khoega, nahi phattega. Phone mein safe hai hamesha.</p>
         </div>
-        <div style="font-size:0.82rem;color:var(--text-muted);">Shows on your phone. Conductor scans it.</div>
+        <div class="benefit-card">
+          <div class="benefit-icon">⚡</div>
+          <div class="benefit-title">Instant Activation</div>
+          <p class="benefit-desc">Payment ke baad turant QR code milega. Koi wait nahi, koi queue nahi.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">🔒</div>
+          <div class="benefit-title">Fraud-Proof QR</div>
+          <p class="benefit-desc">Har pass ka unique encrypted QR code hota hai. Duplicate karna impossible hai.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">💳</div>
+          <div class="benefit-title">Easy Online Payment</div>
+          <p class="benefit-desc">GPay, PhonePe ya Card se pay karo. Koi counter pe line nahi laganee.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">🗺️</div>
+          <div class="benefit-title">All Gujarat Cities</div>
+          <p class="benefit-desc">Ahmedabad, Surat, Vadodara, Rajkot — apna city choose karo.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">📊</div>
+          <div class="benefit-title">Pass History</div>
+          <p class="benefit-desc">Apne saare purane aur current passes aur payment history ek jagah dekho.</p>
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Roles -->
-<section id="roles" style="background:rgba(255,255,255,0.02);border-top:1px solid var(--glass-border);">
-  <div class="section">
-    <div class="section-header" style="text-align:center;margin-bottom:40px;">
-      <h2 class="section-title" style="font-size:2rem;">Choose Your Role</h2>
-      <p class="section-subtitle">Each role has its dedicated portal and features</p>
+  <!-- Pricing -->
+  <section id="pricing" class="features">
+    <div class="section">
+      <div class="section-header" style="text-align:center;margin-bottom:48px;">
+        <h2 class="section-title" style="font-size:2rem;">Simple, Transparent Pricing</h2>
+        <p class="section-subtitle">Koi hidden charge nahi. Jo dikhta hai, wahi pay karo.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="plan-card">
+          <div class="plan-name">Monthly</div>
+          <div class="plan-price"><sup>₹</sup>450</div>
+          <div class="plan-duration">per 30 days</div>
+          <ul class="plan-features">
+            <li>Unlimited travel in selected city</li>
+            <li>Unique QR code</li>
+            <li>Digital pass on phone</li>
+          </ul>
+          <button class="btn btn-secondary btn-full" onclick="window.location.href='login.html'">Get Monthly
+            Pass</button>
+        </div>
+        <div class="plan-card popular">
+          <div class="popular-tag">⭐ Most Popular</div>
+          <div class="plan-name">Quarterly</div>
+          <div class="plan-price"><sup>₹</sup>1,200</div>
+          <div class="plan-duration">per 90 days · Save ₹150</div>
+          <ul class="plan-features">
+            <li>Unlimited travel in selected city</li>
+            <li>Unique QR code</li>
+            <li>Digital pass on phone</li>
+          </ul>
+          <button class="btn btn-primary btn-full" onclick="window.location.href='login.html'">Get Quarterly
+            Pass</button>
+        </div>
+        <div class="plan-card">
+          <div class="plan-name">Yearly</div>
+          <div class="plan-price"><sup>₹</sup>4,500</div>
+          <div class="plan-duration">per 365 days · Save ₹900</div>
+          <ul class="plan-features">
+            <li>Unlimited travel in selected city</li>
+            <li>Unique QR code</li>
+            <li>Digital pass on phone</li>
+          </ul>
+          <button class="btn btn-secondary btn-full" onclick="window.location.href='login.html'">Get Yearly
+            Pass</button>
+        </div>
+      </div>
     </div>
-    <div class="roles-grid">
-      <div class="role-card user" onclick="goToLogin('user')">
-        <div class="role-icon">👤</div>
-        <div class="role-title">Passenger / User</div>
-        <p class="role-desc">Apply for bus/train passes, pay online, download QR codes, and manage all your passes.</p>
-        <button class="role-action" onclick="goToLogin('user')">Login as User →</button>
-      </div>
-      <div class="role-card admin" onclick="goToLogin('admin')">
-        <div class="role-icon">🛡️</div>
-        <div class="role-title">Administrator</div>
-        <p class="role-desc">Approve/reject pass applications, manage users, view revenue analytics and scan logs.</p>
-        <button class="role-action" onclick="goToLogin('admin')">Login as Admin →</button>
-      </div>
-      <div class="role-card conductor" onclick="goToLogin('conductor')">
-        <div class="role-icon">🔍</div>
-        <div class="role-title">Conductor</div>
-        <p class="role-desc">Scan passenger QR codes with device camera. Get instant valid/expired/invalid feedback.</p>
-        <button class="role-action" onclick="goToLogin('conductor')">Login as Conductor →</button>
+  </section>
+
+  <!-- CTA Strip -->
+  <section>
+    <div class="section">
+      <div class="cta-strip">
+        <h2>Ready to Travel Smarter? 🚌</h2>
+        <p>Abhi register karo — free hai, 2 minute lagta hai.</p>
+        <button class="btn btn-white btn-lg" onclick="window.location.href='login.html?tab=register'">
+          📝 Create Free Account
+        </button>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<footer>
-  <p>QR PassPort — Digital Transit Pass System &bull; Built with <span>♥</span> for the Future of Public Transport</p>
-  <p style="margin-top:8px;">Demo Project — All data stored locally in your browser</p>
-</footer>
+  <footer>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Plans</a>
+      <a href="login.html">Login</a>
+    </div>
+    <p>© 2026 <span>BharatPass</span> — Digital Transit Pass System &bull; Secure · Fast · Paperless</p>
+  </footer>
 
-<script src="js/app.js"></script>
-<script>
-  function goToLogin(role) {
-    window.location.href = `login.html?role=${role}`;
-  }
+  <script src="js/app.js"></script>
+  <script>
+    // ===== Theme Toggle =====
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light-mode');
+      document.getElementById('theme-toggle').textContent = isLight ? '☀️' : '🌙';
+      localStorage.setItem('bharatpass_theme', isLight ? 'light' : 'dark');
+    }
+    // Apply saved theme on load
+    if (localStorage.getItem('bharatpass_theme') === 'light') {
+      document.body.classList.add('light-mode');
+      document.getElementById('theme-toggle').textContent = '☀️';
+    }
 
-  // Redirect if already logged in
-  const session = getSession();
-  if (session) {
-    const roleMap = { admin: 'admin/dashboard.html', user: 'user/dashboard.html', conductor: 'conductor/scanner.html' };
-    if (roleMap[session.role]) window.location.href = roleMap[session.role];
-  }
+    // Redirect if already logged in
+    const session = getSession();
+    if (session) {
+      const roleMap = { admin: 'admin/dashboard.html', user: 'user/dashboard.html', conductor: 'conductor/scanner.html' };
+      if (roleMap[session.role]) window.location.href = roleMap[session.role];
+    }
 
-  // Smooth scroll for nav links
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+    // Smooth scroll
+    loadHomeSettings();
+
+    async function loadHomeSettings() {
+      try {
+        const res = await fetch(`${API_URL}/api/settings`);
+        const settings = await res.json();
+        const cards = document.querySelectorAll('.plan-card');
+
+        // Update prices in cards
+        if (settings.prices) {
+          if (cards[0]) cards[0].querySelector('.plan-price').innerHTML = `<sup>₹</sup>${settings.prices.monthly}`;
+          if (cards[1]) cards[1].querySelector('.plan-price').innerHTML = `<sup>₹</sup>${settings.prices.quarterly}`;
+          if (cards[2]) cards[2].querySelector('.plan-price').innerHTML = `<sup>₹</sup>${settings.prices.yearly}`;
+        }
+      } catch (err) { console.error('Landing page settings error:', err); }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+      });
     });
-  });
-</script>
+  </script>
 </body>
+
 </html>

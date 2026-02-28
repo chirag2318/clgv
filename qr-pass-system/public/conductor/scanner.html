@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Scanner — QR PassPort Conductor</title>
+    <title>Scanner — BharatPass Conductor</title>
     <link rel="stylesheet" href="../css/style.css" />
     <!-- QR Scanner -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -247,7 +247,8 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon">🔍</div>
+                <div class="sidebar-logo-icon"><img src="../images/logo.jpeg" alt="BharatPass"
+                        style="width:32px;height:32px;border-radius:8px;object-fit:cover;" /></div>
                 <span>Conductor</span>
             </div>
             <nav class="sidebar-nav">
@@ -273,9 +274,12 @@
         <main class="main-content">
             <header class="main-header">
                 <h1 id="section-title">QR Pass Scanner</h1>
-                <div id="scan-count-badge"
-                    style="background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.25);border-radius:999px;padding:4px 14px;font-size:0.82rem;color:var(--accent-blue);">
-                    0 scans today
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+                    <div id="scan-count-badge"
+                        style="background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.25);border-radius:999px;padding:4px 14px;font-size:0.82rem;color:var(--accent-blue);">
+                        0 scans today
+                    </div>
                 </div>
             </header>
 
@@ -366,7 +370,7 @@
                                 <tr>
                                     <th>Result</th>
                                     <th>Passenger</th>
-                                    <th>Route</th>
+                                    <th>City</th>
                                     <th>Pass ID</th>
                                     <th>Time</th>
                                 </tr>
@@ -461,141 +465,116 @@
             document.getElementById('manual-token').value = '';
         }
 
-        function processToken(rawText) {
+        async function processToken(rawText) {
             let token = rawText;
-            // Try parsing JSON (from QR code data URL)
+            let qrData = null;
             try {
-                const parsed = JSON.parse(rawText);
-                if (parsed.token) token = parsed.token;
-            } catch (e) { /* plain token string */ }
+                qrData = JSON.parse(rawText);
+                if (qrData.token) token = qrData.token;
+            } catch (e) { }
 
-            const db = getDB();
-            const pass = db.passes.find(p => p.qrToken === token);
-            const resultBox = document.getElementById('scan-result-box');
-            const resultIcon = document.getElementById('scan-result-icon');
-            const resultStatus = document.getElementById('scan-result-status');
-            const resultSub = document.getElementById('scan-result-sub');
-            const detailsCard = document.getElementById('pass-details-card');
-            const detailsContent = document.getElementById('pass-details-content');
+            try {
+                const res = await apiPost('/api/conductor/scan', {
+                    qrToken: token,
+                    conductorId: currentSession.id
+                });
 
-            resultBox.className = 'scan-result';
-            detailsCard.classList.remove('show');
+                const { result, pass, passengerName } = res;
 
-            let scanResult = { result: 'invalid', passengerName: 'Unknown', route: 'Unknown' };
+                const resultBox = document.getElementById('scan-result-box');
+                const resultIcon = document.getElementById('scan-result-icon');
+                const resultStatus = document.getElementById('scan-result-status');
+                const resultSub = document.getElementById('scan-result-sub');
+                const detailsCard = document.getElementById('pass-details-card');
+                const detailsContent = document.getElementById('pass-details-content');
 
-            if (!pass) {
-                // Invalid
-                resultBox.classList.add('invalid');
-                resultIcon.textContent = '⛔';
-                resultStatus.innerHTML = '<span style="color:var(--accent-red)">INVALID PASS</span>';
-                resultSub.textContent = `Token not found in system. Possible fraud or manual error.`;
-                scanResult.result = 'invalid';
-                showToast('❌ Invalid pass token!', 'error');
-            } else {
-                const user = db.users.find(u => u.id === pass.userId);
-                const userName = user?.name || 'Unknown';
-                scanResult.passengerName = userName;
-                scanResult.route = pass.route;
-                scanResult.passId = pass.id;
+                resultBox.className = 'scan-result';
+                detailsCard.classList.remove('show');
 
-                const expired = pass.status === 'expired' || (pass.validUntil && isExpired(pass.validUntil));
-
-                if (expired || pass.status === 'expired') {
+                if (result === 'invalid') {
+                    resultBox.classList.add('invalid');
+                    resultIcon.textContent = '⛔';
+                    resultStatus.innerHTML = '<span style="color:var(--accent-red)">INVALID PASS</span>';
+                    resultSub.textContent = `Token not found or invalid.`;
+                    showToast('❌ Invalid pass!', 'error');
+                } else if (result === 'expired') {
                     resultBox.classList.add('expired');
                     resultIcon.textContent = '❌';
                     resultStatus.innerHTML = '<span style="color:var(--accent-orange)">EXPIRED</span>';
-                    resultSub.textContent = `Pass expired on ${formatDate(pass.validUntil)}. Passenger needs to renew.`;
-                    scanResult.result = 'expired';
-                    showToast('⚠️ Pass is expired!', 'error');
-                } else if (pass.status === 'active') {
+                    resultSub.textContent = `Pass expired. Passenger needs renewal.`;
+                    showToast('⚠️ Pass expired!', 'error');
+                    showDetails(pass, passengerName, 'expired');
+                } else if (result === 'valid') {
                     resultBox.classList.add('valid');
                     resultIcon.textContent = '✅';
                     resultStatus.innerHTML = '<span style="color:var(--accent-green)">VALID PASS</span>';
-                    resultSub.textContent = `Pass is valid. Welcome aboard!`;
-                    scanResult.result = 'valid';
-                    showToast(`✅ Valid! ${userName} — ${pass.route}`, 'success');
-                } else {
-                    resultBox.classList.add('invalid');
-                    resultIcon.textContent = '⛔';
-                    resultStatus.innerHTML = `<span style="color:var(--accent-red)">${pass.status.toUpperCase()}</span>`;
-                    resultSub.textContent = `Pass status: ${pass.status}. Not valid for travel.`;
-                    scanResult.result = 'invalid';
-                    showToast(`Pass status: ${pass.status}`, 'error');
+                    resultSub.textContent = `Valid! Welcome aboard.`;
+                    showToast(`✅ Valid: ${passengerName}`, 'success');
+                    showDetails(pass, passengerName, 'valid');
                 }
 
-                // Show details
-                if (pass.status === 'active' && !expired || pass) {
-                    detailsCard.classList.add('show');
-                    const daysLeft = pass.validUntil ? Math.max(0, Math.ceil((new Date(pass.validUntil) - new Date()) / 86400000)) : 0;
-                    detailsContent.innerHTML = `
-        <div class="pass-detail-row"><span class="pass-detail-label">Passenger Name</span><span class="pass-detail-value">${userName}</span></div>
-        <div class="pass-detail-row"><span class="pass-detail-label">Route</span><span class="pass-detail-value">${pass.route}</span></div>
-        <div class="pass-detail-row"><span class="pass-detail-label">Pass Type</span><span class="pass-detail-value">${pass.passType.charAt(0).toUpperCase() + pass.passType.slice(1)}</span></div>
-        <div class="pass-detail-row"><span class="pass-detail-label">Valid From</span><span class="pass-detail-value">${formatDate(pass.validFrom)}</span></div>
-        <div class="pass-detail-row"><span class="pass-detail-label">Valid Until</span><span class="pass-detail-value" style="color:${scanResult.result === 'valid' ? 'var(--accent-green)' : 'var(--accent-red)'};">${formatDate(pass.validUntil)}</span></div>
-        ${scanResult.result === 'valid' ? `<div class="pass-detail-row"><span class="pass-detail-label">Days Remaining</span><span class="pass-detail-value" style="color:var(--accent-blue);">${daysLeft} days</span></div>` : ''}
-        <div class="pass-detail-row"><span class="pass-detail-label">Token</span><span class="pass-detail-value" style="font-family:monospace;font-size:0.78rem;">${token}</span></div>
-      `;
-                }
+                renderRecentScans();
+                renderScanHistory();
+                updateScanCount();
+            } catch (err) {
+                showToast('Verification failed', 'error');
             }
-
-            // Log scan
-            logScan(scanResult, token);
-            renderRecentScans();
-            renderScanHistory();
-            updateScanCount();
         }
 
-        function logScan(scanResult, token) {
-            const db = getDB();
-            db.scanLogs.push({
-                id: generateId('s'),
-                passId: scanResult.passId || token,
-                conductorId: currentSession.id,
-                scannedAt: new Date().toISOString(),
-                result: scanResult.result,
-                passengerName: scanResult.passengerName,
-                route: scanResult.route
-            });
-            saveDB(db);
+        function showDetails(pass, passengerName, status) {
+            const detailsCard = document.getElementById('pass-details-card');
+            const detailsContent = document.getElementById('pass-details-content');
+            detailsCard.classList.add('show');
+            detailsContent.innerHTML = `
+                <div class="pass-detail-row"><span class="pass-detail-label">Passenger Name</span><span class="pass-detail-value">${passengerName}</span></div>
+                <div class="pass-detail-row"><span class="pass-detail-label">City</span><span class="pass-detail-value">${pass.city || pass.route}</span></div>
+                <div class="pass-detail-row"><span class="pass-detail-label">Pass Type</span><span class="pass-detail-value">${pass.passType}</span></div>
+                <div class="pass-detail-row"><span class="pass-detail-label">Valid Until</span><span class="pass-detail-value" style="color:${status === 'valid' ? 'var(--accent-green)' : 'var(--accent-red)'};">${formatDate(pass.validUntil)}</span></div>
+            `;
         }
 
-        function updateScanCount() {
-            const db = getDB();
-            const today = new Date().toISOString().split('T')[0];
-            const count = db.scanLogs.filter(l => l.conductorId === currentSession.id && l.scannedAt?.startsWith(today)).length;
-            document.getElementById('scan-count-badge').textContent = `${count} scans today`;
+        async function updateScanCount() {
+            try {
+                const logs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
+                const today = new Date().toISOString().split('T')[0];
+                const count = logs.filter(l => l.scannedAt?.startsWith(today)).length;
+                document.getElementById('scan-count-badge').textContent = `${count} scans today`;
+            } catch (err) { }
         }
 
-        function renderRecentScans() {
-            const db = getDB();
-            const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
-            const mine = db.scanLogs.filter(l => l.conductorId === currentSession.id).slice(-5).reverse();
-            document.getElementById('recent-scans-mini').innerHTML = mine.map(l => `
-    <div class="mini-log-item">
-      <span>${icons[l.result] || '❓'}</span>
-      <div style="flex:1;">
-        <div style="color:var(--text-primary);">${l.passengerName || 'Unknown'}</div>
-        <div style="color:var(--text-muted);font-size:0.75rem;">${l.route || '—'}</div>
-      </div>
-      <div style="color:var(--text-muted);font-size:0.75rem;">${formatDateTime(l.scannedAt)}</div>
-    </div>`).join('') || '<div style="color:var(--text-muted);font-size:0.82rem;padding:8px 0;">No scans yet. Start scanning!</div>';
+        async function renderRecentScans() {
+            try {
+                const logs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
+                const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
+                const mine = logs.slice(0, 5);
+                document.getElementById('recent-scans-mini').innerHTML = mine.map(l => `
+                    <div class="mini-log-item">
+                    <span>${icons[l.result] || '❓'}</span>
+                    <div style="flex:1;">
+                        <div style="color:var(--text-primary);">${l.passengerName || 'Passenger'}</div>
+                        <div style="color:var(--text-muted);font-size:0.75rem;">${l.city || l.route || '—'}</div>
+                    </div>
+                    <div style="color:var(--text-muted);font-size:0.75rem;">${formatDateTime(l.scannedAt)}</div>
+                    </div>`).join('') || '<div style="color:var(--text-muted);font-size:0.82rem;padding:8px 0;">No scans yet.</div>';
+            } catch (err) { }
         }
 
-        function renderScanHistory() {
-            const db = getDB();
-            const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
-            const resultColors = { valid: 'var(--accent-green)', expired: 'var(--accent-orange)', invalid: 'var(--accent-red)' };
-            const mine = db.scanLogs.filter(l => l.conductorId === currentSession.id).slice().reverse();
-            document.getElementById('scan-history-table').innerHTML = mine.map(l => `
-    <tr>
-      <td><span style="color:${resultColors[l.result]};font-weight:600;">${icons[l.result]} ${l.result?.toUpperCase()}</span></td>
-      <td style="font-weight:500;">${l.passengerName || 'Unknown'}</td>
-      <td style="font-size:0.85rem;color:var(--text-secondary);">${l.route || '—'}</td>
-      <td style="font-family:monospace;font-size:0.78rem;color:var(--text-muted);">${(l.passId || '').toString().slice(-10).toUpperCase()}</td>
-      <td style="font-size:0.82rem;color:var(--text-muted);">${formatDateTime(l.scannedAt)}</td>
-    </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No scans yet</td></tr>`;
+        async function renderScanHistory() {
+            try {
+                const logs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
+                const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
+                const resultColors = { valid: 'var(--accent-green)', expired: 'var(--accent-orange)', invalid: 'var(--accent-red)' };
+                document.getElementById('scan-history-table').innerHTML = logs.map(l => `
+                    <tr>
+                    <td><span style="color:${resultColors[l.result]};font-weight:600;">${icons[l.result]} ${l.result?.toUpperCase()}</span></td>
+                    <td style="font-weight:500;">${l.passengerName || 'Passenger'}</td>
+                    <td style="font-size:0.85rem;color:var(--text-secondary);">${l.city || l.route || '—'}</td>
+                    <td style="font-family:monospace;font-size:0.78rem;color:var(--text-muted);">${(l.passId || '').toString().slice(-10).toUpperCase()}</td>
+                    <td style="font-size:0.82rem;color:var(--text-muted);">${formatDateTime(l.scannedAt)}</td>
+                    </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No scans yet</td></tr>`;
+            } catch (err) { }
         }
+
     </script>
 </body>
 

@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login — QR PassPort</title>
+    <title>Login — BharatPass</title>
     <link rel="stylesheet" href="css/style.css" />
     <style>
         body {
@@ -22,22 +22,34 @@
             padding: 20px;
         }
 
+        /* ---- Auth Card ---- */
         .auth-card {
-            background: rgba(15, 21, 38, 0.95);
+            background: var(--bg-card);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-xl);
             padding: 40px;
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: var(--shadow-card);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
+        /* Light mode: solid white card */
+        body.light-mode .auth-card {
+            background: #ffffff;
+            border-color: rgba(79, 142, 247, 0.15);
+            box-shadow: 0 20px 60px rgba(79, 142, 247, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+
+        /* ---- Logo ---- */
         .auth-logo {
             text-align: center;
             margin-bottom: 32px;
         }
 
         .auth-logo-icon {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             border-radius: 18px;
             background: var(--gradient-primary);
             display: flex;
@@ -46,6 +58,7 @@
             font-size: 28px;
             margin: 0 auto 12px;
             box-shadow: 0 8px 32px rgba(79, 142, 247, 0.4);
+            overflow: hidden;
         }
 
         .auth-logo-title {
@@ -64,13 +77,20 @@
             margin-top: 4px;
         }
 
+        /* ---- Login / Register toggle ---- */
         .auth-toggle {
             display: flex;
-            background: rgba(255, 255, 255, 0.04);
+            background: var(--bg-secondary);
             border-radius: var(--radius-md);
             padding: 4px;
             margin-bottom: 28px;
             border: 1px solid var(--glass-border);
+            transition: background 0.3s ease;
+        }
+
+        body.light-mode .auth-toggle {
+            background: #f0f3fc;
+            border-color: rgba(79, 142, 247, 0.15);
         }
 
         .auth-toggle-btn {
@@ -86,12 +106,17 @@
             cursor: pointer;
         }
 
+        body.light-mode .auth-toggle-btn {
+            color: var(--text-muted);
+        }
+
         .auth-toggle-btn.active {
             background: var(--gradient-primary);
             color: white;
             box-shadow: 0 2px 12px rgba(79, 142, 247, 0.4);
         }
 
+        /* ---- Form ---- */
         .auth-form {
             display: none;
             animation: fade-in 0.25s ease;
@@ -101,59 +126,23 @@
             display: block;
         }
 
-        .role-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
+        /* Light mode inputs look clean */
+        body.light-mode .form-input {
+            background: #f5f7ff;
+            border-color: rgba(79, 142, 247, 0.2);
+            color: #0a0e1a;
         }
 
-        .role-option {
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-md);
-            padding: 14px 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            transition: var(--transition);
-            text-align: center;
-        }
-
-        .role-option.selected {
+        body.light-mode .form-input:focus {
+            background: #ffffff;
             border-color: var(--accent-blue);
-            background: rgba(79, 142, 247, 0.1);
         }
 
-        .role-option-icon {
-            font-size: 1.5rem;
-        }
-
-        .role-option-label {
-            font-size: 0.78rem;
-            font-weight: 600;
+        body.light-mode .form-label {
             color: var(--text-secondary);
         }
 
-        .role-option.selected .role-option-label {
-            color: var(--accent-blue);
-        }
-
-        .demo-hint {
-            background: rgba(79, 142, 247, 0.06);
-            border: 1px solid rgba(79, 142, 247, 0.15);
-            border-radius: var(--radius-md);
-            padding: 14px 16px;
-            margin-bottom: 20px;
-            font-size: 0.82rem;
-            color: var(--text-secondary);
-        }
-
-        .demo-hint strong {
-            color: var(--accent-blue);
-        }
-
+        /* ---- Back link ---- */
         .back-link {
             text-align: center;
             margin-top: 20px;
@@ -170,6 +159,7 @@
             text-decoration: underline;
         }
 
+        /* ---- Error message ---- */
         .error-msg {
             background: rgba(255, 71, 87, 0.1);
             border: 1px solid rgba(255, 71, 87, 0.25);
@@ -184,6 +174,37 @@
         .error-msg.show {
             display: block;
         }
+
+        body.light-mode .error-msg {
+            background: rgba(255, 71, 87, 0.07);
+        }
+
+        /* ---- Divider ---- */
+        .auth-divider {
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 42%;
+            height: 1px;
+            background: var(--glass-border);
+        }
+
+        .auth-divider::before {
+            left: 0;
+        }
+
+        .auth-divider::after {
+            right: 0;
+        }
     </style>
 </head>
 
@@ -193,11 +214,16 @@
         <div class="orb orb-2"></div>
     </div>
 
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()"
+        style="position:fixed;top:16px;right:16px;z-index:9999;" title="Toggle theme">🌙</button>
+
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-logo">
-                <div class="auth-logo-icon">🚌</div>
-                <div class="auth-logo-title">QR PassPort</div>
+                <div class="auth-logo-icon"><img src="images/logo.jpeg" alt="BharatPass"
+                        style="width:56px;height:56px;border-radius:16px;object-fit:cover;" /></div>
+                <div class="auth-logo-title">BharatPass</div>
                 <div class="auth-logo-sub">Digital Transit Pass System</div>
             </div>
 
@@ -212,11 +238,6 @@
 
             <!-- Login Form -->
             <form class="auth-form active" id="form-login" onsubmit="handleLogin(event)">
-                <div class="demo-hint">
-                    <strong>Demo Accounts:</strong><br />
-                    admin@pass.com | user@pass.com | conductor@pass.com<br />
-                    Password: <strong>demo123</strong>
-                </div>
                 <div class="form-group">
                     <label class="form-label">Email Address</label>
                     <input type="email" class="form-input" id="login-email" placeholder="your@email.com" required />
@@ -226,7 +247,7 @@
                     <input type="password" class="form-input" id="login-password" placeholder="••••••••" required />
                 </div>
                 <button type="submit" class="btn btn-primary btn-full" id="login-btn">
-                    Login to Account →
+                    🎫 Access My Pass →
                 </button>
             </form>
 
@@ -245,22 +266,9 @@
                     <input type="password" class="form-input" id="reg-password" placeholder="Choose a password"
                         minlength="6" required />
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Register As</label>
-                    <div class="role-selector" id="role-selector">
-                        <div class="role-option selected" data-role="user" onclick="selectRole('user')">
-                            <div class="role-option-icon">👤</div>
-                            <div class="role-option-label">User / Passenger</div>
-                        </div>
-                        <div class="role-option" data-role="conductor" onclick="selectRole('conductor')">
-                            <div class="role-option-icon">🔍</div>
-                            <div class="role-option-label">Conductor</div>
-                        </div>
-                    </div>
-                    <input type="hidden" id="reg-role" value="user" />
-                </div>
+                <input type="hidden" id="reg-role" value="user" />
                 <button type="submit" class="btn btn-primary btn-full" id="register-btn">
-                    Create Account →
+                    Create My Account →
                 </button>
             </form>
 
@@ -272,14 +280,9 @@
 
     <script src="js/app.js"></script>
     <script>
-        // Pre-fill based on URL param
+        // Auto-switch to register tab if ?tab=register
         const urlParams = new URLSearchParams(window.location.search);
-        const roleParam = urlParams.get('role');
-        if (roleParam) {
-            const emailMap = { admin: 'admin@pass.com', user: 'user@pass.com', conductor: 'conductor@pass.com' };
-            if (emailMap[roleParam]) document.getElementById('login-email').value = emailMap[roleParam];
-            document.getElementById('login-password').value = 'demo123';
-        }
+        if (urlParams.get('tab') === 'register') switchTab('register');
 
         // Redirect if already logged in
         const session = getSession();
@@ -314,38 +317,40 @@
             document.getElementById('error-msg').classList.remove('show');
         }
 
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault(); hideError();
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
-            const db = getDB();
-            const user = db.users.find(u => u.email === email && u.password === password);
-            if (!user) { showError('Invalid email or password. Try demo credentials above.'); return; }
-            setSession(user);
-            const roleMap = { admin: 'admin/dashboard.html', user: 'user/dashboard.html', conductor: 'conductor/scanner.html' };
-            showToast(`Welcome back, ${user.name}!`, 'success');
-            setTimeout(() => window.location.href = roleMap[user.role] || 'index.html', 600);
+            
+            try {
+                const user = await apiPost('/api/auth/login', { email, password });
+                setSession(user);
+                const roleMap = { admin: 'admin/dashboard.html', user: 'user/dashboard.html', conductor: 'conductor/scanner.html' };
+                showToast(`Welcome back, ${user.name}!`, 'success');
+                setTimeout(() => window.location.href = roleMap[user.role] || 'index.html', 600);
+            } catch (err) {
+                showError(err.message || 'Invalid email or password. Please try again.');
+            }
         }
 
-        function handleRegister(e) {
+        async function handleRegister(e) {
             e.preventDefault(); hideError();
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
             const password = document.getElementById('reg-password').value;
             const role = document.getElementById('reg-role').value;
 
-            const db = getDB();
-            if (db.users.find(u => u.email === email)) { showError('An account with this email already exists.'); return; }
-
-            const newUser = { id: generateId('u'), name, email, password, role, createdAt: new Date().toISOString().split('T')[0] };
-            db.users.push(newUser);
-            saveDB(db);
-            setSession(newUser);
-
-            showToast(`Account created! Welcome, ${name}!`, 'success');
-            const roleMap = { admin: 'admin/dashboard.html', user: 'user/dashboard.html', conductor: 'conductor/scanner.html' };
-            setTimeout(() => window.location.href = roleMap[role] || 'index.html', 700);
+            try {
+                const newUser = await apiPost('/api/auth/register', { name, email, password, role });
+                setSession(newUser);
+                showToast(`Account created! Welcome, ${name}!`, 'success');
+                const roleMap = { admin: 'admin/dashboard.html', user: 'user/dashboard.html', conductor: 'conductor/scanner.html' };
+                setTimeout(() => window.location.href = roleMap[role] || 'index.html', 700);
+            } catch (err) {
+                showError(err.message || 'Registration failed. Try again.');
+            }
         }
+
     </script>
 </body>
 

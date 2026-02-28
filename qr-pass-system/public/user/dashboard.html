@@ -1,12 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Passes — QR PassPort</title>
+    <title>My Passes — BharatPass</title>
     <link rel="stylesheet" href="../css/style.css" />
     <!-- QR Code via Server API -->
+    <!-- Razorpay Checkout -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         .passes-grid {
             display: grid;
@@ -123,12 +125,25 @@
     </div>
 
     <div class="dashboard">
+        <!-- Mobile Topbar (visible only on small screens) -->
+        <div class="mobile-topbar" id="mobile-topbar">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+            <div
+                style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                BharatPass</div>
+            <button class="theme-toggle" id="dash-theme-toggle" onclick="toggleTheme()"
+                style="width:36px;height:36px;font-size:1rem;">🌙</button>
+        </div>
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon">🚌</div>
-                <span>QR PassPort</span>
+                <div class="sidebar-logo-icon"><img src="../images/logo.jpeg" alt="BharatPass"
+                        style="width:32px;height:32px;border-radius:8px;object-fit:cover;" /></div>
+                <span>BharatPass</span>
             </div>
+
             <nav class="sidebar-nav">
                 <div class="sidebar-item active" onclick="switchSection('my-passes')">
                     <span class="icon">🎫</span><span>My Passes</span>
@@ -177,17 +192,9 @@
                         <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:24px;">🎫 Apply for New Pass</h2>
                         <form onsubmit="handleApply(event)">
                             <div class="form-group">
-                                <label class="form-label">Route</label>
+                                <label class="form-label">City</label>
                                 <select class="form-select" id="apply-route" required>
-                                    <option value="">Select your route...</option>
-                                    <option>Andheri ↔ Dadar</option>
-                                    <option>Bandra ↔ CST</option>
-                                    <option>Borivali ↔ Churchgate</option>
-                                    <option>Thane ↔ VT</option>
-                                    <option>Kurla ↔ Chhatrapati Shivaji Terminus</option>
-                                    <option>Ghatkopar ↔ Versova</option>
-                                    <option>Mulund ↔ Dadar</option>
-                                    <option>Kandivali ↔ Bandra</option>
+                                    <option value="">Select your city...</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -238,7 +245,7 @@
                             <thead>
                                 <tr>
                                     <th>Pass ID</th>
-                                    <th>Route</th>
+                                    <th>City</th>
                                     <th>Amount</th>
                                     <th>Status</th>
                                     <th>Date</th>
@@ -290,23 +297,70 @@
 
     <script src="../js/app.js"></script>
     <script>
+        // =============================================
+        // Razorpay Key & API URL (auto-detect)
+        // =============================================
+        const RAZORPAY_KEY = 'rzp_test_RNxIfamNcviLsP';
+        const API_BASE = '/api';
+
+        // ===== Theme =====
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-mode');
+            const icon = isLight ? '☀️' : '🌙';
+            const t1 = document.getElementById('dash-theme-toggle');
+            if (t1) t1.textContent = icon;
+            localStorage.setItem('bharatpass_theme', isLight ? 'light' : 'dark');
+        }
+        if (localStorage.getItem('bharatpass_theme') === 'light') {
+            document.body.classList.add('light-mode');
+            const t1 = document.getElementById('dash-theme-toggle');
+            if (t1) t1.textContent = '☀️';
+        }
+
+        // ===== Mobile Sidebar =====
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
         let currentSession = null;
         let currentPassId = null;
-        let selectedPassType = 'monthly';
+        let selectedPassType = 'monthly'; // default
+        let systemSettings = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             currentSession = requireAuth('user');
             if (!currentSession) return;
-
             initSidebar();
-            document.getElementById('header-user-greeting').textContent = `Welcome, ${currentSession.name}`;
-
-            // Set default start date to today
-            document.getElementById('apply-start-date').value = new Date().toISOString().split('T')[0];
-
+            loadSettings();
             renderPasses();
             renderPayments();
         });
+
+        async function loadSettings() {
+            try {
+                const res = await fetch(`${API_URL}/api/settings`);
+                systemSettings = await res.json();
+
+                // Populate cities dropdown
+                const citySelect = document.getElementById('apply-route');
+                citySelect.innerHTML = `<option value="">Select your city...</option>` +
+                    systemSettings.cities.map(c => `<option value="${c}">${c}</option>`).join('');
+
+                // Update pricing display
+                updatePriceDisplay();
+
+                document.getElementById('header-user-greeting').textContent = `Welcome, ${currentSession.name}`;
+
+                // Set default start date to today
+                document.getElementById('apply-start-date').value = new Date().toISOString().split('T')[0];
+
+            } catch (err) {
+                console.error('Failed to load settings:', err);
+            }
+        }
 
         function switchSection(name) {
             ['my-passes', 'apply', 'payments'].forEach(s => {
@@ -319,6 +373,20 @@
             document.getElementById('section-title').textContent = titles[name] || '';
         }
 
+        function updatePriceDisplay() {
+            // This function needs to update the price-chip-amount elements
+            // based on the systemSettings.prices
+            if (systemSettings && systemSettings.prices) {
+                document.querySelectorAll('.price-chip').forEach(chip => {
+                    const type = chip.dataset.type;
+                    const price = systemSettings.prices[type];
+                    if (price !== undefined) {
+                        chip.querySelector('.price-chip-amount').textContent = `₹${price}`;
+                    }
+                });
+            }
+        }
+
         function selectPassType(type, el) {
             selectedPassType = type;
             document.getElementById('apply-type').value = type;
@@ -326,194 +394,202 @@
             el.classList.add('selected');
         }
 
-        function renderPasses() {
-            const db = getDB();
-            const userPasses = db.passes.filter(p => p.userId === currentSession.id);
-            const container = document.getElementById('passes-container');
-
-            // Auto-expire
-            userPasses.forEach(p => { if (p.status === 'active' && p.validUntil && isExpired(p.validUntil)) p.status = 'expired'; });
-
-            if (userPasses.length === 0) {
-                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎫</div><h3>No passes yet</h3><p>Apply for your first digital pass!</p></div>`;
-                return;
+        function getPassPrice(type) {
+            if (systemSettings && systemSettings.prices) {
+                return systemSettings.prices[type] || 450;
             }
-
-            container.innerHTML = `<div class="passes-grid">${userPasses.map(pass => `
-    <div class="pass-card">
-      <div class="pass-decorative">🚌</div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-        <div class="pass-number">PASS #${pass.id.slice(-6).toUpperCase()}</div>
-        ${getBadgeHTML(pass.status)}
-      </div>
-      <div class="pass-route">${pass.route}</div>
-      <div class="pass-meta">
-        <div class="pass-meta-item">
-          <span class="pass-meta-label">Type</span>
-          <span class="pass-meta-value">${pass.passType.charAt(0).toUpperCase() + pass.passType.slice(1)}</span>
-        </div>
-        <div class="pass-meta-item">
-          <span class="pass-meta-label">Valid Until</span>
-          <span class="pass-meta-value">${formatDate(pass.validUntil)}</span>
-        </div>
-        <div class="pass-meta-item">
-          <span class="pass-meta-label">Price</span>
-          <span class="pass-meta-value">₹${pass.price}</span>
-        </div>
-      </div>
-      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-        ${pass.status === 'active' ? `<button class="btn btn-primary btn-sm" onclick="showQR('${pass.id}')">📱 View QR Code</button>` : ''}
-        ${pass.status === 'pending' ? `<button class="btn btn-sm" style="background:rgba(255,145,0,0.15);color:var(--accent-orange);border:1px solid rgba(255,145,0,0.3);" onclick="showPayment('${pass.id}')">💳 Pay Now</button>` : ''}
-        ${pass.status === 'expired' ? `<button class="btn btn-secondary btn-sm" onclick="switchSection('apply')">🔄 Renew</button>` : ''}
-      </div>
-    </div>
-  `).join('')}</div>`;
+            const fallback = { monthly: 450, quarterly: 1200, yearly: 4500 };
+            return fallback[type] || 0;
         }
 
-        function renderPayments() {
-            const db = getDB();
-            const tbody = document.getElementById('payment-table-body');
-            const userPayments = db.payments.filter(p => p.userId === currentSession.id);
-            if (userPayments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px;">No payments yet</td></tr>`;
-                return;
+        function getPassDuration(type) {
+            if (systemSettings && systemSettings.durations) {
+                return systemSettings.durations[type] || 30; // Default to 30 days if not found
             }
-            tbody.innerHTML = userPayments.map(pay => {
-                const pass = db.passes.find(p => p.id === pay.passId);
-                return `<tr>
-      <td style="font-family:monospace;font-size:0.82rem;">${pay.passId?.slice(-6).toUpperCase() || '-'}</td>
-      <td>${pass?.route || '-'}</td>
-      <td style="color:var(--accent-green);font-weight:600;">₹${pay.amount}</td>
-      <td><span class="badge badge-active">✅ Completed</span></td>
-      <td>${formatDate(pay.paidAt)}</td>
-    </tr>`;
-            }).join('');
+            const fallback = { monthly: 30, quarterly: 90, yearly: 365 };
+            return fallback[type] || 0;
+        }
+
+        async function renderPasses() {
+            try {
+                const userPasses = await fetchPasses(currentSession.id);
+                const container = document.getElementById('passes-container');
+
+                if (userPasses.length === 0) {
+                    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎫</div><h3>No passes yet</h3><p>Apply for your first digital pass!</p></div>`;
+                    return;
+                }
+
+                container.innerHTML = `<div class="passes-grid">${userPasses.map(pass => `
+                    <div class="pass-card">
+                    <div class="pass-decorative">🏙️</div>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                        <div class="pass-number">PASS #${(pass.id || pass._id).slice(-6).toUpperCase()}</div>
+                        ${getBadgeHTML(pass.status)}
+                    </div>
+                    <div class="pass-route">${pass.city || pass.route}</div>
+                    <div class="pass-meta">
+                        <div class="pass-meta-item">
+                        <span class="pass-meta-label">Type</span>
+                        <span class="pass-meta-value">${pass.passType.charAt(0).toUpperCase() + pass.passType.slice(1)}</span>
+                        </div>
+                        <div class="pass-meta-item">
+                        <span class="pass-meta-label">Valid Until</span>
+                        <span class="pass-meta-value">${formatDate(pass.validUntil)}</span>
+                        </div>
+                        <div class="pass-meta-item">
+                        <span class="pass-meta-label">Price</span>
+                        <span class="pass-meta-value">₹${pass.price}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+                        ${pass.status === 'active' ? `<button class="btn btn-primary btn-sm" onclick="showQR('${pass._id}')">📱 View QR Code</button>` : ''}
+                        ${pass.status === 'pending' ? `<button class="btn btn-sm" style="background:rgba(255,145,0,0.15);color:var(--accent-orange);border:1px solid rgba(255,145,0,0.3);" onclick="showPayment('${pass._id}')">💳 Pay Now</button>` : ''}
+                        ${pass.status === 'expired' ? `<button class="btn btn-secondary btn-sm" onclick="switchSection('apply')">🔄 Renew</button>` : ''}
+                    </div>
+                    </div>
+                `).join('')}</div>`;
+            } catch (err) {
+                console.error('Failed to render passes:', err);
+                showToast('Failed to load passes from server.', 'error');
+            }
+        }
+
+        async function renderPayments() {
+            try {
+                // For now, payments can be fetched via passes or a separate endpoint if we add one.
+                // Let's just show an empty table or implement a quick get.
+                const tbody = document.getElementById('payment-table-body');
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px;">Payment history coming soon...</td></tr>`;
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         async function showQR(passId) {
-            const db = getDB();
-            const pass = db.passes.find(p => p.id === passId);
-            const user = db.users.find(u => u.id === currentSession.id);
-            if (!pass || !pass.qrToken) { showToast('QR code not available', 'error'); return; }
-
-            // Show loading state
-            const qrDiv = document.getElementById('qr-display');
-            qrDiv.innerHTML = '<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#444;font-size:0.85rem;">Generating QR...</div>';
-            openModal('qr-modal');
-
             try {
+                const passes = await fetchPasses(currentSession.id);
+                const pass = passes.find(p => p._id === passId || p.id === passId);
+                if (!pass || !pass.qrToken) { showToast('QR code not available', 'error'); return; }
+
+                // Show loading state
+                const qrDiv = document.getElementById('qr-display');
+                qrDiv.innerHTML = '<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#444;font-size:0.85rem;">Generating QR...</div>';
+                openModal('qr-modal');
+
                 // Fetch QR from server API
                 const params = new URLSearchParams({
                     token: pass.qrToken,
-                    passId: pass.id,
-                    route: pass.route,
-                    name: user?.name || 'Passenger',
+                    passId: pass._id,
+                    city: pass.city || pass.route,
+                    name: currentSession.name,
                     size: '200'
                 });
-                const res = await fetch(`/api/qr?${params}`);
+                const res = await fetch(`${API_URL}/api/qr?${params}`);
                 const data = await res.json();
 
                 if (data.qrDataUrl) {
                     qrDiv.innerHTML = `<img src="${data.qrDataUrl}" width="180" height="180" style="border-radius:8px;display:block;" alt="QR Code"/>`;
                 } else {
                     qrDiv.innerHTML = '<div style="color:red;padding:20px;">QR generation failed</div>';
-                    showToast('QR generation failed. Is the server running?', 'error');
                 }
-            } catch (err) {
-                // Fallback: show token as text if server not available
-                qrDiv.innerHTML = `<div style="width:180px;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f5f5f5;border-radius:8px;gap:8px;">
-                    <div style="font-size:2rem;">📵</div>
-                    <div style="font-size:0.72rem;color:#333;text-align:center;padding:8px;">Server not running.<br/>Start with:<br/><code style='font-size:0.68rem;'>node server.js</code></div>
-                </div>`;
-                showToast('Could not reach server. Run: node server.js', 'error');
-            }
 
-            document.getElementById('qr-pass-info').innerHTML = `
-    <div style="background:rgba(255,255,255,0.04);border-radius:var(--radius-md);padding:16px;margin-top:4px;">
-      <div class="pass-info-row"><span class="pass-info-label">Passenger</span><span class="pass-info-value">${user?.name || '-'}</span></div>
-      <div class="pass-info-row"><span class="pass-info-label">Route</span><span class="pass-info-value">${pass.route}</span></div>
-      <div class="pass-info-row"><span class="pass-info-label">Type</span><span class="pass-info-value">${pass.passType}</span></div>
-      <div class="pass-info-row"><span class="pass-info-label">Valid Until</span><span class="pass-info-value" style="color:var(--accent-green);">${formatDate(pass.validUntil)}</span></div>
-    </div>`;
-            document.getElementById('qr-token-display').textContent = `Token: ${pass.qrToken}`;
+                document.getElementById('qr-pass-info').innerHTML = `
+                    <div style="background:rgba(255,255,255,0.04);border-radius:var(--radius-md);padding:16px;margin-top:4px;">
+                    <div class="pass-info-row"><span class="pass-info-label">Passenger</span><span class="pass-info-value">${currentSession.name}</span></div>
+                    <div class="pass-info-row"><span class="pass-info-label">City</span><span class="pass-info-value">${pass.city || pass.route}</span></div>
+                    <div class="pass-info-row"><span class="pass-info-label">Type</span><span class="pass-info-value">${pass.passType}</span></div>
+                    <div class="pass-info-row"><span class="pass-info-label">Valid Until</span><span class="pass-info-value" style="color:var(--accent-green);">${formatDate(pass.validUntil)}</span></div>
+                    </div>`;
+                document.getElementById('qr-token-display').textContent = `Token: ${pass.qrToken}`;
+            } catch (err) {
+                showToast('Failed to load QR code', 'error');
+            }
         }
 
         function showPayment(passId) {
-            const db = getDB();
-            const pass = db.passes.find(p => p.id === passId);
-            if (!pass) return;
             currentPassId = passId;
-            document.getElementById('payment-modal-content').innerHTML = `
-    <div class="payment-band">
-      <div>
-        <div style="font-size:0.82rem;color:var(--text-muted);">Amount Due</div>
-        <div style="font-size:1.8rem;font-weight:700;color:var(--accent-orange);">₹${pass.price}</div>
-      </div>
-      <div style="font-size:0.85rem;color:var(--text-secondary);text-align:right;">
-        ${pass.route}<br/><span style="color:var(--text-muted);">${pass.passType} pass</span>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Select Payment Method</label>
-      <select class="form-select" id="payment-method">
-        <option value="upi">UPI (GPay / PhonePe)</option>
-        <option value="card">Debit / Credit Card</option>
-        <option value="netbanking">Net Banking</option>
-        <option value="wallet">Mobile Wallet</option>
-      </select>
-    </div>
-    <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.15);border-radius:var(--radius-md);padding:12px;font-size:0.82rem;color:var(--text-secondary);margin-bottom:20px;">
-      🔒 This is a demo — no real payment will be processed. Click below to simulate payment.
-    </div>
-    <button class="btn btn-success btn-full" onclick="completePayment()">✅ Pay ₹${pass.price} Now</button>`;
-            openModal('payment-modal');
-        }
-
-        function completePayment() {
-            if (!currentPassId) return;
-            const db = getDB();
-            const pass = db.passes.find(p => p.id === currentPassId);
+            const pass = cachedPasses.find(p => p._id === passId);
             if (!pass) return;
 
-            // Activate pass
-            pass.status = 'active';
-            pass.qrToken = generateToken(currentPassId);
-            pass.validFrom = new Date().toISOString().split('T')[0];
-            pass.validUntil = addDays(new Date(), getPassDuration(pass.passType));
-
-            // Add payment record
-            db.payments.push({
-                id: generateId('pay'), passId: currentPassId, userId: currentSession.id,
-                amount: pass.price, status: 'completed', paidAt: new Date().toISOString()
-            });
-
-            saveDB(db);
-            closeModal('payment-modal');
-            showToast('Payment successful! Your QR pass is now active.', 'success');
-            renderPasses();
-            renderPayments();
-        }
-
-        function handleApply(e) {
-            e.preventDefault();
-            const route = document.getElementById('apply-route').value;
-            const type = document.getElementById('apply-type').value;
-            const startDate = document.getElementById('apply-start-date').value;
-            if (!route) { showToast('Please select a route', 'error'); return; }
-
-            const db = getDB();
-            const newPass = {
-                id: generateId('p'), userId: currentSession.id, route,
-                passType: type, status: 'pending',
-                validFrom: null, validUntil: null, qrToken: null,
-                price: getPassPrice(type), createdAt: new Date().toISOString().split('T')[0]
+            const options = {
+                "key": RAZORPAY_KEY,
+                "amount": pass.price * 100, // Razorpay takes amount in paise
+                "currency": "INR",
+                "name": "BharatPass",
+                "description": `${pass.passType} Pass - ${pass.city}`,
+                "prefill": {
+                    "name": currentSession.name,
+                    "email": currentSession.email
+                },
+                "theme": { "color": "#4f8ef7" },
+                "handler": function (response) {
+                    activatePassAfterPayment(response);
+                },
+                "config": {
+                    "display": {
+                        "hide": [
+                            { "method": "upi" },
+                            { "method": "netbanking" },
+                            { "method": "wallet" },
+                            { "method": "qr" }
+                        ]
+                    }
+                }
             };
-            db.passes.push(newPass);
-            saveDB(db);
-            showToast('Pass application submitted! Admin will review shortly.', 'success');
-            switchSection('my-passes');
-            renderPasses();
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                showToast('Payment Failed: ' + response.error.description, 'error');
+            });
+            rzp.open();
         }
+
+        async function activatePassAfterPayment(razorpayResponse) {
+            if (!currentPassId) return;
+            try {
+                const qrToken = generateToken();
+                const validFrom = new Date().toISOString().split('T')[0];
+                const validUntil = addDays(new Date(), getPassDuration(selectedPassType));
+
+                await apiPost('/api/admin/approve-pass', {
+                    passId: currentPassId,
+                    validFrom,
+                    validUntil,
+                    qrToken,
+                    razorpayPaymentId: razorpayResponse.razorpay_payment_id
+                });
+
+                showToast('🎉 Pass activated successfully!', 'success');
+                renderPasses();
+                // Auto-show QR after payment
+                setTimeout(() => showQR(currentPassId), 800);
+            } catch (err) {
+                showToast('Failed to activate pass', 'error');
+            }
+        }
+
+        async function handleApply(e) {
+            e.preventDefault();
+            const city = document.getElementById('apply-route').value;
+            const type = document.getElementById('apply-type').value;
+            if (!city) { showToast('Please select a city', 'error'); return; }
+
+            try {
+                await apiPost('/api/passes', {
+                    userId: currentSession.id,
+                    city: city,
+                    passType: type,
+                    price: getPassPrice(type)
+                });
+                showToast('Pass application submitted!', 'success');
+                switchSection('my-passes');
+                renderPasses();
+            } catch (err) {
+                showToast('Failed to apply for pass', 'error');
+            }
+        }
+
     </script>
 </body>
 

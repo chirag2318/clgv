@@ -1,86 +1,75 @@
-// =============================================
-// QR Pass System - Shared Utilities
+﻿// =============================================
+// BharatPass - Shared Utilities
 // =============================================
 
-const DB_KEY = 'qrpass_db';
-
-const DEFAULT_DB = {
-  users: [
-    { id: 'u1', name: 'Admin User', email: 'admin@pass.com', password: 'demo123', role: 'admin', createdAt: '2025-01-01' },
-    { id: 'u2', name: 'Rahul Sharma', email: 'user@pass.com', password: 'demo123', role: 'user', createdAt: '2025-01-05' },
-    { id: 'u3', name: 'Conductor Ravi', email: 'conductor@pass.com', password: 'demo123', role: 'conductor', createdAt: '2025-01-05' },
-    { id: 'u4', name: 'Priya Mehta', email: 'priya@pass.com', password: 'demo123', role: 'user', createdAt: '2025-01-10' },
-  ],
-  passes: [
-    {
-      id: 'p1', userId: 'u2', route: 'Andheri ↔ Dadar', passType: 'monthly',
-      status: 'active', validFrom: '2026-02-01', validUntil: '2026-03-15',
-      qrToken: 'QR-DEMO-ACTIVE-001', price: 450, createdAt: '2026-02-01'
-    },
-    {
-      id: 'p2', userId: 'u4', route: 'Bandra ↔ CST', passType: 'quarterly',
-      status: 'active', validFrom: '2026-01-01', validUntil: '2026-04-01',
-      qrToken: 'QR-DEMO-ACTIVE-002', price: 1200, createdAt: '2026-01-01'
-    },
-    {
-      id: 'p3', userId: 'u2', route: 'Borivali ↔ Churchgate', passType: 'yearly',
-      status: 'pending', validFrom: null, validUntil: null,
-      qrToken: null, price: 4500, createdAt: '2026-02-20'
-    },
-    {
-      id: 'p4', userId: 'u4', route: 'Thane ↔ VT', passType: 'monthly',
-      status: 'expired', validFrom: '2025-12-01', validUntil: '2026-01-01',
-      qrToken: 'QR-DEMO-EXPIRED-001', price: 450, createdAt: '2025-12-01'
-    },
-  ],
-  payments: [
-    { id: 'pay1', passId: 'p1', userId: 'u2', amount: 450, status: 'completed', paidAt: '2026-02-01' },
-    { id: 'pay2', passId: 'p2', userId: 'u4', amount: 1200, status: 'completed', paidAt: '2026-01-01' },
-    { id: 'pay4', passId: 'p4', userId: 'u4', amount: 450, status: 'completed', paidAt: '2025-12-01' },
-  ],
-  scanLogs: [
-    { id: 's1', passId: 'p1', conductorId: 'u3', scannedAt: '2026-02-24T08:30:00', result: 'valid', passengerName: 'Rahul Sharma', route: 'Andheri ↔ Dadar' },
-    { id: 's2', passId: 'p4', conductorId: 'u3', scannedAt: '2026-02-24T09:15:00', result: 'expired', passengerName: 'Priya Mehta', route: 'Thane ↔ VT' },
-    { id: 's3', passId: 'p2', conductorId: 'u3', scannedAt: '2026-02-24T10:00:00', result: 'valid', passengerName: 'Priya Mehta', route: 'Bandra ↔ CST' },
-  ]
-};
-
-// =============================================
-// DB Functions
-// =============================================
-function getDB() {
-  const raw = localStorage.getItem(DB_KEY);
-  if (!raw) {
-    localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_DB));
-    return DEFAULT_DB;
+// ===== GLOBAL THEME (applies on every page) =====
+(function () {
+  if (localStorage.getItem('bharatpass_theme') === 'light') {
+    document.documentElement.classList.add('light-mode');
+    document.body && document.body.classList.add('light-mode');
   }
-  return JSON.parse(raw);
+})();
+
+// Called by any page's toggle button
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  document.documentElement.classList.toggle('light-mode', isLight);
+  localStorage.setItem('bharatpass_theme', isLight ? 'light' : 'dark');
+  // Update all toggle buttons on this page
+  document.querySelectorAll('.theme-toggle, #theme-toggle, #dash-theme-toggle')
+    .forEach(btn => { btn.textContent = isLight ? '☀️' : '🌙'; });
 }
 
-function saveDB(db) {
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
+// Restore icon on toggle buttons after DOM loads
+document.addEventListener('DOMContentLoaded', () => {
+  const isLight = localStorage.getItem('bharatpass_theme') === 'light';
+  document.querySelectorAll('.theme-toggle, #theme-toggle, #dash-theme-toggle')
+    .forEach(btn => { btn.textContent = isLight ? '☀️' : '🌙'; });
+});
+
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000'
+  : '/api'; // Netlify redirect in production
+
+// =============================================
+// DB Functions (Refactored for API)
+// =============================================
+async function fetchPasses(userId = null) {
+  const url = userId ? `${API_URL}/api/passes?userId=${userId}` : `${API_URL}/api/passes`;
+  const res = await fetch(url);
+  return res.json();
 }
 
-function resetDB() {
-  localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_DB));
+async function apiPost(endpoint, data) {
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Request failed');
+  }
+  return res.json();
 }
+
 
 // =============================================
 // Auth Functions
 // =============================================
 function getSession() {
-  const raw = localStorage.getItem('qrpass_session');
+  const raw = localStorage.getItem('bharatpass_session');
   return raw ? JSON.parse(raw) : null;
 }
 
 function setSession(user) {
-  localStorage.setItem('qrpass_session', JSON.stringify({
+  localStorage.setItem('bharatpass_session', JSON.stringify({
     id: user.id, name: user.name, email: user.email, role: user.role
   }));
 }
 
 function clearSession() {
-  localStorage.removeItem('qrpass_session');
+  localStorage.removeItem('bharatpass_session');
 }
 
 function requireAuth(role) {

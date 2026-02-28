@@ -1,5 +1,5 @@
 {
-  "name": "qr-pass-system",
+  "name": "bharatpass",
   "version": "1.0.0",
   "description": "QR-Based Bus/Train Pass Management System",
   "main": "server.js",
@@ -8,7 +8,14 @@
     "dev": "node server.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
     "express": "^4.18.2",
+    "mongoose": "^9.2.3",
     "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.0.1"
   }
 }
