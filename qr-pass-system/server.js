@@ -62,6 +62,11 @@ app.use(express.json());
 // Admin Seed API (Utility)
 // =====================================================
 app.get('/api/admin/seed', async (req, res) => {
+    // Basic protection for production
+    if (process.env.NODE_ENV === 'production' && req.query.key !== process.env.SEED_KEY) {
+        return res.status(403).json({ error: 'Unauthorized: Seed key required in production' });
+    }
+
     if (isMockMode) {
         mockData.users = [
             { _id: 'admin1', name: 'Admin User', email: 'admin@pass.com', password: 'demo123', role: 'admin' },
