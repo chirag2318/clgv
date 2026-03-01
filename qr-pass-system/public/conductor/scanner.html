@@ -2,455 +2,489 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Scanner — BharatPass Conductor</title>
-    <link rel="stylesheet" href="../css/style.css" />
-    <!-- QR Scanner -->
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Conductor Dashboard - Mobile Optimized</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <style>
-        .scanner-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-            max-width: 900px;
-            margin: 0 auto;
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-red: #ef4444;
+            --accent-orange: #f59e0b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --gradient-green: linear-gradient(135deg, #10b981, #059669);
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
         }
 
-        @media (max-width: 768px) {
-            .scanner-layout {
-                grid-template-columns: 1fr;
-                gap: 16px;
-                padding: 0 4px;
-            }
-
-            .scanner-header,
-            .scanner-btn-area,
-            .manual-entry,
-            .pass-details-card {
-                padding: 12px 16px !important;
-            }
-
-            .scan-result {
-                padding: 20px 16px !important;
-            }
-
-            .camera-status {
-                padding: 20px 10px !important;
-            }
-
-            #scanner-viewport {
-                min-height: 200px !important;
-            }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .scanner-box {
-            background: var(--bg-card);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-xl);
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            padding-bottom: 80px;
+            /* Space for bottom nav */
+        }
+
+        /* Animated Background Orbs */
+        .bg-orbs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
             overflow: hidden;
         }
 
-        .scanner-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--glass-border);
+        .orb {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            filter: blur(80px);
+            border-radius: 50%;
+            opacity: 0.15;
+        }
+
+        .orb-1 {
+            top: -100px;
+            right: -50px;
+            background: var(--accent-green);
+        }
+
+        .orb-2 {
+            bottom: -100px;
+            left: -50px;
+            background: var(--accent-blue);
+        }
+
+        /* Topbar */
+        .top-header {
+            padding: 16px 20px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .scanner-header h2 {
-            font-size: 1rem;
-            font-weight: 600;
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            background: var(--gradient-green);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        #scanner-viewport {
-            width: 100%;
-            min-height: 240px;
-            background: #000;
-            position: relative;
+        /* Main Sections */
+        .container {
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        #scanner-viewport video {
-            width: 100% !important;
-        }
-
-        #html5-qr-code-full-region {
-            border: none !important;
-        }
-
-        #html5-qr-code-full-region img {
+        .section {
             display: none;
         }
 
-        #html5-qr-code-full-region>div {
-            border: none !important;
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
         }
 
-        .scanner-btn-area {
-            padding: 16px 24px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .result-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .scan-result {
-            border-radius: var(--radius-xl);
-            padding: 32px 24px;
-            text-align: center;
-            transition: var(--transition);
-        }
-
-        .scan-result-icon {
-            font-size: 64px;
-            margin-bottom: 12px;
-            animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes pop-in {
+        @keyframes fadeIn {
             from {
-                transform: scale(0.5);
                 opacity: 0;
+                transform: translateY(10px);
             }
 
             to {
-                transform: scale(1);
                 opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        .scan-result-status {
-            font-size: 2rem;
-            font-weight: 800;
-            font-family: 'Space Grotesk', sans-serif;
-            letter-spacing: -0.02em;
+        /* Status Cards */
+        .status-badge {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 8px 16px;
+            border-radius: 12px;
+            color: var(--accent-blue);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: inline-block;
         }
 
-        .scan-result.valid {
-            background: rgba(0, 230, 118, 0.08);
-            border: 2px solid rgba(0, 230, 118, 0.35);
+        /* Scanner Box */
+        .scanner-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
         }
 
-        .scan-result.invalid {
-            background: rgba(255, 71, 87, 0.08);
-            border: 2px solid rgba(255, 71, 87, 0.35);
-        }
-
-        .scan-result.expired {
-            background: rgba(255, 145, 0, 0.08);
-            border: 2px solid rgba(255, 145, 0, 0.35);
-        }
-
-        .scan-result.idle {
-            background: var(--bg-card);
-            border: 1px dashed var(--glass-border);
-        }
-
-        .pass-details-card {
-            background: var(--bg-card);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-xl);
-            padding: 20px;
-            display: none;
-        }
-
-        .pass-details-card.show {
-            display: block;
-            animation: fade-in 0.3s ease;
-        }
-
-        .pass-detail-row {
+        .viewport-container {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #000;
+            position: relative;
             display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            font-size: 0.88rem;
-        }
-
-        .pass-detail-row:last-child {
-            border-bottom: none;
-        }
-
-        .pass-detail-label {
-            color: var(--text-muted);
-        }
-
-        .pass-detail-value {
-            font-weight: 600;
-        }
-
-        .manual-entry {
-            background: var(--bg-card);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-xl);
-            padding: 20px;
-        }
-
-        .manual-entry h3 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 14px;
-            color: var(--text-secondary);
-        }
-
-        .scan-log-mini {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .mini-log-item {
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            font-size: 0.82rem;
-            display: flex;
-            gap: 8px;
             align-items: center;
+            justify-content: center;
         }
 
-        .mini-log-item:last-child {
-            border-bottom: none;
+        #qr-scanner-div {
+            width: 100% !important;
+            height: 100% !important;
         }
 
-        .camera-status {
-            padding: 32px;
+        .scanner-placeholder {
             text-align: center;
             color: var(--text-muted);
+        }
+
+        /* Buttons */
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: var(--gradient-green);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: white;
+        }
+
+        /* Manual Entry */
+        .manual-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .form-input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 12px;
+            color: white;
+            font-family: monospace;
+        }
+
+        /* Result Panel */
+        .result-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-radius: 30px 30px 0 0;
+            padding: 24px;
+            z-index: 200;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .result-overlay.show {
+            transform: translateY(0);
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .result-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .detail-label {
+            color: var(--text-muted);
             font-size: 0.9rem;
+        }
+
+        .detail-value {
+            font-weight: 500;
+        }
+
+        /* History Table */
+        .history-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-status {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0 calc(12px + var(--safe-bottom));
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 150;
+        }
+
+        .nav-item {
             display: flex;
             flex-direction: column;
-            gap: 10px;
             align-items: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.75rem;
+            gap: 4px;
+            transition: 0.2s;
         }
 
-        .camera-status-icon {
-            font-size: 2.5rem;
+        .nav-item.active {
+            color: var(--accent-green);
         }
 
-        .scanning-pulse {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid var(--accent-blue);
-            opacity: 0;
-            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        .nav-icon {
+            font-size: 1.4rem;
         }
 
-        @keyframes pulse-ring {
-            0% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(0.5);
-            }
-
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(2);
-            }
+        /* Utility */
+        .close-btn {
+            background: #334155;
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            width: 100%;
+            margin-top: 20px;
+            font-weight: 600;
         }
     </style>
 </head>
 
 <body>
+
     <div class="bg-orbs">
         <div class="orb orb-1"></div>
         <div class="orb orb-2"></div>
     </div>
 
-    <div class="dashboard">
-        <!-- Mobile Topbar (visible only on small screens) -->
-        <div class="mobile-topbar" id="mobile-topbar">
-            <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-            <div
-                style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;background:var(--gradient-green);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-                Conductor</div>
-            <button class="theme-toggle" id="dash-theme-toggle" onclick="toggleTheme()"
-                style="width:36px;height:36px;font-size:1rem;">🌙</button>
+    <!-- Top Header -->
+    <header class="top-header">
+        <div class="logo">BharatPass</div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <div id="user-initial"
+                style="width: 32px; height: 32px; border-radius: 50%; background: var(--gradient-green); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">
+                C</div>
         </div>
-        <!-- Sidebar Overlay -->
-        <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><img src="../images/logo.jpeg" alt="BharatPass"
-                        style="width:32px;height:32px;border-radius:8px;object-fit:cover;" /></div>
-                <span>Conductor</span>
-            </div>
-            <nav class="sidebar-nav">
-                <div class="sidebar-item active"><span class="icon">📷</span><span>Scanner</span></div>
-                <div class="sidebar-item" onclick="switchSection('scan-history')"><span class="icon">📋</span><span>Scan
-                        History</span></div>
-            </nav>
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar" id="sidebar-user-avatar"
-                        style="background:linear-gradient(135deg,#00e676,#00bfa5);">C</div>
-                    <div class="user-details">
-                        <div class="user-name" id="sidebar-user-name">Conductor</div>
-                        <div class="user-role" id="sidebar-user-role">Conductor</div>
+    </header>
+
+    <div class="container">
+
+        <!-- SECTION: SCANNER -->
+        <section id="section-scanner" class="section active">
+            <div class="status-badge" id="scan-count">0 scans today</div>
+
+            <div class="scanner-card">
+                <div class="viewport-container" id="scanner-viewport">
+                    <div class="scanner-placeholder" id="camera-idle">
+                        <div style="font-size: 3rem; margin-bottom: 15px;">📷</div>
+                        <p>Camera Ready</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Click button below to start</p>
                     </div>
                 </div>
-                <button class="btn btn-secondary btn-sm btn-full" style="margin-top:10px;" onclick="logout()">🚪
-                    Logout</button>
-            </div>
-        </aside>
-
-        <!-- Main -->
-        <main class="main-content">
-            <header class="main-header">
-                <h1 id="section-title">QR Pass Scanner</h1>
-                <div style="display:flex;gap:10px;align-items:center;">
-                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
-                    <div id="scan-count-badge"
-                        style="background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.25);border-radius:999px;padding:4px 14px;font-size:0.82rem;color:var(--accent-blue);">
-                        0 scans today
-                    </div>
-                </div>
-            </header>
-
-            <div class="main-body">
-                <!-- Scanner Section -->
-                <div id="section-scanner">
-                    <div class="scanner-layout">
-                        <!-- Left: Camera + Manual -->
-                        <div style="display:flex;flex-direction:column;gap:20px;">
-                            <!-- Camera Scanner -->
-                            <div class="scanner-box">
-                                <div class="scanner-header">
-                                    <h2>📷 Camera Scanner</h2>
-                                    <span id="cam-status-badge"
-                                        style="font-size:0.78rem;background:rgba(255,255,255,0.06);border-radius:999px;padding:3px 10px;color:var(--text-muted);">Ready</span>
-                                </div>
-                                <div id="scanner-viewport">
-                                    <div class="camera-status" id="camera-idle">
-                                        <div class="camera-status-icon">📷</div>
-                                        <div>Click <strong>Start Scanning</strong> to open camera</div>
-                                        <div style="font-size:0.78rem;color:var(--text-muted);">Allow camera permission
-                                            when prompted</div>
-                                    </div>
-                                </div>
-                                <div class="scanner-btn-area">
-                                    <button class="btn btn-primary" id="btn-start-scan" onclick="startScan()">📷 Start
-                                        Scanning</button>
-                                    <button class="btn btn-secondary" id="btn-stop-scan" onclick="stopScan()"
-                                        style="display:none;">⏹ Stop</button>
-                                </div>
-                            </div>
-
-                            <!-- Manual Entry -->
-                            <div class="manual-entry">
-                                <h3>✍️ Manual Token Entry</h3>
-                                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px;">Enter token
-                                    manually if camera scan fails</p>
-                                <div style="display:flex;gap:8px;">
-                                    <input type="text" class="form-input" id="manual-token"
-                                        placeholder="e.g. QRP-ABCD1234WXYZ or QR-DEMO-ACTIVE-001"
-                                        style="flex:1;font-family:monospace;font-size:0.88rem;" />
-                                    <button class="btn btn-primary" onclick="processManualToken()">Validate</button>
-                                </div>
-                                <div style="margin-top:10px;font-size:0.78rem;color:var(--text-muted);">
-                                    Demo tokens: <code
-                                        style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">QR-DEMO-ACTIVE-001</code>
-                                    · <code
-                                        style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">QR-DEMO-EXPIRED-001</code>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Right: Result Panel -->
-                        <div class="result-panel">
-                            <!-- Result Display -->
-                            <div class="scan-result idle" id="scan-result-box">
-                                <div class="scan-result-icon" id="scan-result-icon">📷</div>
-                                <div class="scan-result-status" id="scan-result-status">Waiting for Scan</div>
-                                <div id="scan-result-sub"
-                                    style="font-size:0.88rem;color:var(--text-secondary);margin-top:8px;">Point camera
-                                    at passenger's QR code or enter token manually</div>
-                            </div>
-
-                            <!-- Pass Details -->
-                            <div class="pass-details-card" id="pass-details-card">
-                                <h3 style="font-size:0.95rem;font-weight:600;margin-bottom:14px;">🎫 Pass Details</h3>
-                                <div id="pass-details-content"></div>
-                            </div>
-
-                            <!-- Recent Scans Mini -->
-                            <div class="manual-entry">
-                                <h3>📋 Recent Scans</h3>
-                                <div class="scan-log-mini" id="recent-scans-mini"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- History Section -->
-                <div id="section-scan-history" style="display:none;">
-                    <div class="section-header">
-                        <h2 class="section-title">Scan History</h2>
-                        <p class="section-subtitle">All QR scans performed by you</p>
-                    </div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Result</th>
-                                    <th>Passenger</th>
-                                    <th>City</th>
-                                    <th>Pass ID</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="scan-history-table"></tbody>
-                        </table>
-                    </div>
+                <div style="padding: 16px;">
+                    <button class="btn-action btn-primary" id="btn-start-scan" onclick="startScan()">
+                        <span>📷</span> Start Scanning
+                    </button>
+                    <button class="btn-action btn-secondary" id="btn-stop-scan" onclick="stopScan()"
+                        style="display: none;">
+                        <span>⏹</span> Stop Camera
+                    </button>
                 </div>
             </div>
-        </main>
+
+            <div class="manual-box">
+                <h3 style="margin: 0; font-size: 1rem;">Manual Token</h3>
+                <div class="input-group">
+                    <input type="text" class="form-input" id="manual-token" placeholder="Token ID...">
+                    <button class="btn-action btn-primary" style="width: auto; padding: 0 20px;"
+                        onclick="processManualToken()">Verify</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: HISTORY -->
+        <section id="section-history" class="section">
+            <h2 style="font-family: 'Space Grotesk';">Recent History</h2>
+            <div id="history-list">
+                <!-- History items will be injected here -->
+            </div>
+        </section>
+
+        <!-- SECTION: PROFILE -->
+        <section id="section-profile" class="section">
+            <div class="manual-box" style="text-align: center; padding: 40px 20px;">
+                <div id="profile-initial"
+                    style="width: 80px; height: 80px; background: var(--gradient-green); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                    C</div>
+                <h2 id="profile-name" style="margin-bottom: 5px;">Conductor</h2>
+                <p id="profile-id" style="color: var(--text-muted); margin-top: 0;">ID: COND-xxxx</p>
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+                <button class="btn-action btn-secondary" onclick="logout()">🚪 Logout</button>
+            </div>
+        </section>
+
     </div>
 
+    <!-- Result Overlay Drawer -->
+    <div class="result-overlay" id="result-drawer">
+        <div class="result-header">
+            <div class="result-icon" id="res-icon">✅</div>
+            <h2 id="res-title" style="margin: 0;">Valid Pass</h2>
+            <p id="res-msg" style="color: var(--text-secondary);">Welcome aboard!</p>
+        </div>
+        <div id="res-details">
+            <!-- Details go here -->
+        </div>
+        <button class="close-btn" onclick="closeResult()">Dismiss</button>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active" onclick="switchSection('scanner', this)">
+            <span class="nav-icon">📷</span>
+            <span>Scanner</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchSection('history', this)">
+            <span class="nav-icon">📋</span>
+            <span>History</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchSection('profile', this)">
+            <span class="nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- App Logic Injection -->
     <script src="../js/app.js"></script>
     <script>
-        let currentSession = null;
         let qrScanner = null;
-        let scanning = false;
+        let isScanning = false;
+        let currentSession = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             currentSession = requireAuth('conductor');
             if (!currentSession) return;
-            initSidebar();
-            renderRecentScans();
-            renderScanHistory();
+
+            // Populate profile data
+            document.getElementById('profile-name').textContent = currentSession.name;
+            const init = currentSession.name.charAt(0).toUpperCase();
+            document.getElementById('user-initial').textContent = init;
+            document.getElementById('profile-initial').textContent = init;
+            document.getElementById('profile-id').textContent = 'ID: ' + currentSession.id.substring(0, 8).toUpperCase();
+
             updateScanCount();
         });
 
-        function switchSection(name) {
-            ['scanner', 'scan-history'].forEach(s => {
-                document.getElementById(`section-${s}`).style.display = s === name ? '' : 'none';
-            });
-            document.querySelectorAll('.sidebar-item').forEach((el, i) => {
-                el.classList.toggle('active', i === ['scanner', 'scan-history'].indexOf(name));
-            });
-            document.getElementById('section-title').textContent = name === 'scanner' ? 'QR Pass Scanner' : 'Scan History';
+        async function updateScanCount() {
+            try {
+                const logs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
+                const today = new Date().toISOString().split('T')[0];
+                const count = logs.filter(l => l.scannedAt && l.scannedAt.startsWith(today)).length;
+                document.getElementById('scan-count').textContent = `${count} scans today`;
+            } catch (err) { }
+        }
+
+        // UI Logic
+        function switchSection(name, el) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`section-${name}`).classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
+
+            if (name === 'history') renderHistory();
+            if (isScanning) stopScan();
         }
 
         function startScan() {
             const viewport = document.getElementById('scanner-viewport');
-            const idleDiv = document.getElementById('camera-idle');
-            if (idleDiv) idleDiv.style.display = 'none';
-
+            document.getElementById('camera-idle').style.display = 'none';
             document.getElementById('btn-start-scan').style.display = 'none';
-            document.getElementById('btn-stop-scan').style.display = '';
-            document.getElementById('cam-status-badge').textContent = '🔴 Scanning...';
-            document.getElementById('cam-status-badge').style.color = 'var(--accent-red)';
+            document.getElementById('btn-stop-scan').style.display = 'flex';
 
-            // Create scanner div if not exists
             let scannerDiv = document.getElementById('qr-scanner-div');
             if (!scannerDiv) {
                 scannerDiv = document.createElement('div');
@@ -458,53 +492,48 @@
                 viewport.appendChild(scannerDiv);
             }
 
-            qrScanner = new Html5Qrcode('qr-scanner-div');
+            qrScanner = new Html5Qrcode("qr-scanner-div");
+            const config = { fps: 15, qrbox: { width: 250, height: 250 } };
 
-            // Responsive box size
-            const boxSize = Math.min(250, window.innerWidth - 80);
-            const config = { fps: 10, qrbox: { width: boxSize, height: boxSize }, aspectRatio: 1.0 };
-
-            qrScanner.start({ facingMode: 'environment' }, config, onScanSuccess, onScanError)
+            qrScanner.start({ facingMode: "environment" }, config, onScanSuccess)
                 .catch(err => {
-                    showToast('Camera access failed. Use manual token entry.', 'error');
+                    console.error(err);
+                    alert("Camera access denied");
                     stopScan();
                 });
-
-            scanning = true;
+            isScanning = true;
         }
 
         function stopScan() {
-            if (qrScanner && scanning) {
-                qrScanner.stop().catch(() => { });
-                scanning = false;
+            if (qrScanner) {
+                qrScanner.stop().then(() => {
+                    qrScanner.clear();
+                    document.getElementById('qr-scanner-div').remove();
+                }).catch(e => console.log(e));
             }
-            document.getElementById('btn-start-scan').style.display = '';
+            document.getElementById('camera-idle').style.display = 'block';
+            document.getElementById('btn-start-scan').style.display = 'flex';
             document.getElementById('btn-stop-scan').style.display = 'none';
-            document.getElementById('cam-status-badge').textContent = 'Ready';
-            document.getElementById('cam-status-badge').style.color = 'var(--text-muted)';
+            isScanning = false;
         }
 
         function onScanSuccess(decodedText) {
             stopScan();
-            processToken(decodedText);
-        }
-
-        function onScanError(error) {
-            // Silently ignore scan errors (continuous)
+            // Haptic Feedback for mobile
+            if (window.navigator.vibrate) window.navigator.vibrate(100);
+            processTokenString(decodedText);
         }
 
         function processManualToken() {
-            const token = document.getElementById('manual-token').value.trim();
-            if (!token) { showToast('Please enter a token', 'error'); return; }
-            processToken(token);
+            const val = document.getElementById('manual-token').value.trim();
+            if (val) processTokenString(val);
             document.getElementById('manual-token').value = '';
         }
 
-        async function processToken(rawText) {
+        async function processTokenString(rawText) {
             let token = rawText;
-            let qrData = null;
             try {
-                qrData = JSON.parse(rawText);
+                const qrData = JSON.parse(rawText);
                 if (qrData.token) token = qrData.token;
             } catch (e) { }
 
@@ -513,103 +542,90 @@
                     qrToken: token,
                     conductorId: currentSession.id
                 });
-
                 const { result, pass, passengerName } = res;
-
-                const resultBox = document.getElementById('scan-result-box');
-                const resultIcon = document.getElementById('scan-result-icon');
-                const resultStatus = document.getElementById('scan-result-status');
-                const resultSub = document.getElementById('scan-result-sub');
-                const detailsCard = document.getElementById('pass-details-card');
-                const detailsContent = document.getElementById('pass-details-content');
-
-                resultBox.className = 'scan-result';
-                detailsCard.classList.remove('show');
-
-                if (result === 'invalid') {
-                    resultBox.classList.add('invalid');
-                    resultIcon.textContent = '⛔';
-                    resultStatus.innerHTML = '<span style="color:var(--accent-red)">INVALID PASS</span>';
-                    resultSub.textContent = `Token not found or invalid.`;
-                    showToast('❌ Invalid pass!', 'error');
-                } else if (result === 'expired') {
-                    resultBox.classList.add('expired');
-                    resultIcon.textContent = '❌';
-                    resultStatus.innerHTML = '<span style="color:var(--accent-orange)">EXPIRED</span>';
-                    resultSub.textContent = `Pass expired. Passenger needs renewal.`;
-                    showToast('⚠️ Pass expired!', 'error');
-                    showDetails(pass, passengerName, 'expired');
-                } else if (result === 'valid') {
-                    resultBox.classList.add('valid');
-                    resultIcon.textContent = '✅';
-                    resultStatus.innerHTML = '<span style="color:var(--accent-green)">VALID PASS</span>';
-                    resultSub.textContent = `Valid! Welcome aboard.`;
-                    showToast(`✅ Valid: ${passengerName}`, 'success');
-                    showDetails(pass, passengerName, 'valid');
-                }
-
-                renderRecentScans();
-                renderScanHistory();
+                showResult(result, {
+                    name: passengerName || 'Passenger',
+                    id: pass ? pass._id : 'N/A',
+                    route: pass ? (pass.city || pass.route || 'City Pass') : 'N/A',
+                    validity: pass ? formatDate(pass.validUntil) : 'N/A'
+                });
                 updateScanCount();
             } catch (err) {
-                showToast('Verification failed', 'error');
+                alert('Verification failed: ' + err.message);
             }
         }
 
-        function showDetails(pass, passengerName, status) {
-            const detailsCard = document.getElementById('pass-details-card');
-            const detailsContent = document.getElementById('pass-details-content');
-            detailsCard.classList.add('show');
-            detailsContent.innerHTML = `
-                <div class="pass-detail-row"><span class="pass-detail-label">Passenger Name</span><span class="pass-detail-value">${passengerName}</span></div>
-                <div class="pass-detail-row"><span class="pass-detail-label">City</span><span class="pass-detail-value">${pass.city || pass.route}</span></div>
-                <div class="pass-detail-row"><span class="pass-detail-label">Pass Type</span><span class="pass-detail-value">${pass.passType}</span></div>
-                <div class="pass-detail-row"><span class="pass-detail-label">Valid Until</span><span class="pass-detail-value" style="color:${status === 'valid' ? 'var(--accent-green)' : 'var(--accent-red)'};">${formatDate(pass.validUntil)}</span></div>
+        function showResult(status, data) {
+            const drawer = document.getElementById('result-drawer');
+            const resIcon = document.getElementById('res-icon');
+            const resTitle = document.getElementById('res-title');
+            const resDetails = document.getElementById('res-details');
+
+            if (status === 'valid') {
+                resIcon.textContent = '✅';
+                resTitle.textContent = 'Valid Pass';
+                resTitle.style.color = 'var(--accent-green)';
+                document.getElementById('res-msg').textContent = 'Welcome aboard!';
+            } else if (status === 'expired') {
+                resIcon.textContent = '⚠️';
+                resTitle.textContent = 'Expired';
+                resTitle.style.color = 'var(--accent-orange)';
+                document.getElementById('res-msg').textContent = 'Pass expired. Passenger needs renewal.';
+            } else {
+                resIcon.textContent = '❌';
+                resTitle.textContent = 'Invalid';
+                resTitle.style.color = 'var(--accent-red)';
+                document.getElementById('res-msg').textContent = 'Token not found or invalid.';
+            }
+
+            resDetails.innerHTML = `
+                <div class="detail-row"><span class="detail-label">Passenger</span><span class="detail-value">${data.name}</span></div>
+                <div class="detail-row"><span class="detail-label">Pass ID</span><span class="detail-value">${data.id}</span></div>
+                <div class="detail-row"><span class="detail-label">Route</span><span class="detail-value">${data.route}</span></div>
+                <div class="detail-row"><span class="detail-label">Valid Until</span><span class="detail-value">${data.validity}</span></div>
             `;
+
+            drawer.classList.add('show');
         }
 
-        async function updateScanCount() {
-            try {
-                const logs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
-                const today = new Date().toISOString().split('T')[0];
-                const count = logs.filter(l => l.scannedAt?.startsWith(today)).length;
-                document.getElementById('scan-count-badge').textContent = `${count} scans today`;
-            } catch (err) { }
+        function closeResult() {
+            document.getElementById('result-drawer').classList.remove('show');
         }
 
-        async function renderRecentScans() {
+        async function renderHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '<div style="text-align:center; padding: 20px;">Loading...</div>';
             try {
                 const logs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
-                const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
-                const mine = logs.slice(0, 5);
-                document.getElementById('recent-scans-mini').innerHTML = mine.map(l => `
-                    <div class="mini-log-item">
-                    <span>${icons[l.result] || '❓'}</span>
-                    <div style="flex:1;">
-                        <div style="color:var(--text-primary);">${l.passengerName || 'Passenger'}</div>
-                        <div style="color:var(--text-muted);font-size:0.75rem;">${l.city || l.route || '—'}</div>
+                if (logs.length === 0) {
+                    list.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 20px;">No scan history found.</div>';
+                    return;
+                }
+                list.innerHTML = logs.map(item => `
+                    <div class="history-card">
+                        <div class="history-status" style="background: ${item.result === 'valid' ? 'rgba(16,185,129,0.1)' : (item.result === 'expired' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239,68,68,0.1)')}; color: ${item.result === 'valid' ? 'var(--accent-green)' : (item.result === 'expired' ? 'var(--accent-orange)' : 'var(--accent-red)')}">
+                            ${item.result === 'valid' ? '✅' : (item.result === 'expired' ? '⚠️' : '❌')}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${item.passengerName || 'Passenger'}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">${formatDateTime(item.scannedAt)}</div>
+                        </div>
+                        <div style="font-size: 0.8rem; font-weight: bold; color: ${item.result === 'valid' ? 'var(--accent-green)' : (item.result === 'expired' ? 'var(--accent-orange)' : 'var(--accent-red)')}">
+                            ${item.result.toUpperCase()}
+                        </div>
                     </div>
-                    <div style="color:var(--text-muted);font-size:0.75rem;">${formatDateTime(l.scannedAt)}</div>
-                    </div>`).join('') || '<div style="color:var(--text-muted);font-size:0.82rem;padding:8px 0;">No scans yet.</div>';
-            } catch (err) { }
+                `).join('');
+            } catch (err) {
+                list.innerHTML = '<div style="color:var(--accent-red); padding:20px;">Failed to load history</div>';
+            }
         }
 
-        async function renderScanHistory() {
-            try {
-                const logs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
-                const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
-                const resultColors = { valid: 'var(--accent-green)', expired: 'var(--accent-orange)', invalid: 'var(--accent-red)' };
-                document.getElementById('scan-history-table').innerHTML = logs.map(l => `
-                    <tr>
-                    <td><span style="color:${resultColors[l.result]};font-weight:600;">${icons[l.result]} ${l.result?.toUpperCase()}</span></td>
-                    <td style="font-weight:500;">${l.passengerName || 'Passenger'}</td>
-                    <td style="font-size:0.85rem;color:var(--text-secondary);">${l.city || l.route || '—'}</td>
-                    <td style="font-family:monospace;font-size:0.78rem;color:var(--text-muted);">${(l.passId || '').toString().slice(-10).toUpperCase()}</td>
-                    <td style="font-size:0.82rem;color:var(--text-muted);">${formatDateTime(l.scannedAt)}</td>
-                    </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No scans yet</td></tr>`;
-            } catch (err) { }
+        function logout() {
+            if (confirm("Logout from Conductor session?")) {
+                localStorage.removeItem('token');
+                window.location.href = '../index.html';
+            }
         }
-
     </script>
 </body>
 
