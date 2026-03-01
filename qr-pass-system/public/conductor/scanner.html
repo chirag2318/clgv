@@ -459,7 +459,10 @@
             }
 
             qrScanner = new Html5Qrcode('qr-scanner-div');
-            const config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.5 };
+
+            // Responsive box size
+            const boxSize = Math.min(250, window.innerWidth - 80);
+            const config = { fps: 10, qrbox: { width: boxSize, height: boxSize }, aspectRatio: 1.0 };
 
             qrScanner.start({ facingMode: 'environment' }, config, onScanSuccess, onScanError)
                 .catch(err => {
