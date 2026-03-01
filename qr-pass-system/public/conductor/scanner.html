@@ -92,6 +92,7 @@
             font-size: 1.2rem;
             background: var(--gradient-green);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -620,12 +621,6 @@
             }
         }
 
-        function logout() {
-            if (confirm("Logout from Conductor session?")) {
-                localStorage.removeItem('token');
-                window.location.href = '../index.html';
-            }
-        }
     </script>
 </body>
 
