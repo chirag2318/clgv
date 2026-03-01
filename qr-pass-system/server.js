@@ -252,6 +252,13 @@ app.post('/api/passes', async (req, res) => {
     }
     try {
         const { userId, city, passType, price } = req.body;
+        console.log(`[PASS_CREATE] Attempting to create ${passType} pass in ${city} for User ID: ${userId}`);
+
+        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+            console.error('[PASS_CREATE] Invalid or missing User ID:', userId);
+            return res.status(400).json({ error: 'Invalid User ID', details: 'The provided User ID is not a valid MongoDB ObjectID.' });
+        }
+
         const newPass = new Pass({
             userId,
             city,
@@ -260,9 +267,10 @@ app.post('/api/passes', async (req, res) => {
             status: 'pending'
         });
         await newPass.save();
+        console.log('[PASS_CREATE] Pass created successfully:', newPass._id);
         res.status(201).json(newPass);
     } catch (err) {
-        console.error('Pass Creation Error:', err);
+        console.error('[PASS_CREATE] Server Error:', err);
         res.status(500).json({ error: 'Failed to create pass', details: err.message });
     }
 });

@@ -48,7 +48,7 @@ async function apiPost(endpoint, data) {
   });
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.error || 'Request failed');
+    throw new Error(err.details || err.error || 'Request failed');
   }
   return res.json();
 }

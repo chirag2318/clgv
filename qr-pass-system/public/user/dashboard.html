@@ -586,7 +586,8 @@
                 switchSection('my-passes');
                 renderPasses();
             } catch (err) {
-                showToast('Failed to apply for pass', 'error');
+                console.error('Apply Error:', err);
+                showToast('Failed to apply for pass: ' + err.message, 'error');
             }
         }
 
