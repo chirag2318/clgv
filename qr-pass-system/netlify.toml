@@ -7,11 +7,11 @@
   targetPort = 3000
 
 [[redirects]]
-  from = "/api/qr"
-  to = "/.netlify/functions/qr"
+  from = "/api/*"
+  to = "https://bharatpass.onrender.com/api/:splat"
   status = 200
 
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from = "/*"
+  to = "/index.html"
   status = 200
