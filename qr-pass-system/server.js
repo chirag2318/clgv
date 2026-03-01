@@ -124,6 +124,33 @@ app.get('/api/admin/seed', async (req, res) => {
 });
 
 // =====================================================
+// Admin FIX Index API (Emergency Fix for Duplicate Nulls)
+// =====================================================
+app.get('/api/admin/fix-index', async (req, res) => {
+    try {
+        if (mongoose.connection.readyState !== 1) {
+            return res.status(503).json({ error: 'Database not connected' });
+        }
+
+        console.log('🚀 Attempting to drop qrToken_1 index...');
+        // Drop the index directly from the collection
+        await mongoose.connection.collection('passes').dropIndex('qrToken_1');
+
+        res.json({
+            message: 'Index qrToken_1 dropped successfully. Mongoose will now recreate it as a sparse index on the next restart or operation.',
+            action_required: 'Please try applying for a pass again now.'
+        });
+    } catch (err) {
+        console.error('Fix Index Error:', err);
+        res.status(500).json({
+            error: 'Failed to drop index',
+            details: err.message,
+            note: 'If the index does not exist, this error is expected. Try applying for a pass anyway.'
+        });
+    }
+});
+
+// =====================================================
 // Auth API
 // =====================================================
 app.post('/api/auth/login', async (req, res) => {
