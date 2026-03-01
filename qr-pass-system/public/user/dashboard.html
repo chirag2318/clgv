@@ -329,6 +329,7 @@
         let currentPassId = null;
         let selectedPassType = 'monthly'; // default
         let systemSettings = null;
+        let cachedPasses = [];
 
         window.addEventListener('DOMContentLoaded', () => {
             currentSession = requireAuth('user');
@@ -412,15 +413,15 @@
 
         async function renderPasses() {
             try {
-                const userPasses = await fetchPasses(currentSession.id);
+                cachedPasses = await fetchPasses(currentSession.id);
                 const container = document.getElementById('passes-container');
 
-                if (userPasses.length === 0) {
+                if (cachedPasses.length === 0) {
                     container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎫</div><h3>No passes yet</h3><p>Apply for your first digital pass!</p></div>`;
                     return;
                 }
 
-                container.innerHTML = `<div class="passes-grid">${userPasses.map(pass => `
+                container.innerHTML = `<div class="passes-grid">${cachedPasses.map(pass => `
                     <div class="pass-card">
                     <div class="pass-decorative">🏙️</div>
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
@@ -525,16 +526,6 @@
                 "theme": { "color": "#4f8ef7" },
                 "handler": function (response) {
                     activatePassAfterPayment(response);
-                },
-                "config": {
-                    "display": {
-                        "hide": [
-                            { "method": "upi" },
-                            { "method": "netbanking" },
-                            { "method": "wallet" },
-                            { "method": "qr" }
-                        ]
-                    }
                 }
             };
 

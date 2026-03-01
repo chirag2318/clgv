@@ -27,9 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     .forEach(btn => { btn.textContent = isLight ? '☀️' : '🌙'; });
 });
 
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3000'
-  : ''; // In production (Netlify), we use relative paths starting with /api
+const isLocal = window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname.match(/^\d+\.\d+\.\d+\.\d+$/);
+
+const API_URL = isLocal ? `http://${window.location.hostname}:3000` : '';
+// In production (Netlify), we use relative paths starting with /api via redirects
 
 // =============================================
 // DB Functions (Refactored for API)

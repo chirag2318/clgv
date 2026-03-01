@@ -15,9 +15,12 @@ const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Mock Data handling disabled (strictly using real DB)
+const isMockMode = false;
+
 // Connect to MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;
-if (MONGODB_URI && MONGODB_URI.indexOf('<password>') === -1) {
+if (MONGODB_URI && (MONGODB_URI.indexOf('<password>') === -1 && MONGODB_URI.indexOf('%3Cdb_password%3E') === -1)) {
     mongoose.connect(MONGODB_URI, {
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
@@ -26,12 +29,13 @@ if (MONGODB_URI && MONGODB_URI.indexOf('<password>') === -1) {
         .then(() => console.log('  📦 Connected to MongoDB Atlas'))
         .catch(err => {
             console.error('  ❌ MongoDB connection error:', err.message);
-            console.log('  🚀 SWITCHING TO MOCK MODE (In-Memory Database) for testing...');
-            isMockMode = true;
+            console.error('  🛑 SERVER STOPPED: Real Database connection is required. Please check your credentials.');
+            process.exit(1);
         });
 } else {
-    console.log('  ⚠️  MONGODB_URI is empty. Switching to MOCK MODE.');
-    isMockMode = true;
+    console.error('  ⚠️  MONGODB_URI contains a placeholder or is empty.');
+    console.error('  🛑 SERVER STOPPED: Please update the .env file with your real MongoDB Atlas password.');
+    process.exit(1);
 }
 
 // Models
@@ -41,8 +45,7 @@ const Payment = require('./models/Payment');
 const ScanLog = require('./models/ScanLog');
 const SystemSettings = require('./models/SystemSettings');
 
-// Mock Data for Local Testing (if DB fails)
-let isMockMode = false;
+// Mock Data
 let mockData = {
     users: [],
     passes: [],
@@ -393,27 +396,51 @@ app.post('/api/admin/settings', async (req, res) => {
 // Conductor API
 // =====================================================
 
-// Log a scan
+// Process and Log a scan
 app.post('/api/conductor/scan', async (req, res) => {
-    if (isMockMode) {
-        const { passId, conductorId, result, passengerName, city } = req.body;
-        const log = { _id: 'l' + Date.now(), passId, conductorId, result, passengerName, city, scannedAt: new Date() };
-        mockData.logs.unshift(log);
-        return res.status(201).json(log);
-    }
     try {
-        const { passId, conductorId, result, passengerName, city } = req.body;
+        const { qrToken, conductorId } = req.body;
+
+        if (!qrToken) {
+            return res.json({ result: 'invalid' });
+        }
+
+        // Find the pass by QR token
+        const pass = await Pass.findOne({ qrToken });
+        if (!pass) {
+            return res.json({ result: 'invalid' });
+        }
+
+        // Fetch user for name
+        const user = await User.findById(pass.userId);
+        const passengerName = user ? user.name : 'Unknown';
+
+        // Determine result
+        let result = 'valid';
+        if (pass.status === 'expired' || (pass.validUntil && new Date(pass.validUntil) < new Date())) {
+            result = 'expired';
+            if (pass.status !== 'expired') {
+                pass.status = 'expired';
+                await pass.save();
+            }
+        } else if (pass.status !== 'active') {
+            result = 'invalid';
+        }
+
+        // Create scan log
         const log = new ScanLog({
-            passId,
+            passId: pass._id,
             conductorId,
             result,
             passengerName,
-            city
+            city: pass.city
         });
         await log.save();
-        res.status(201).json(log);
+
+        res.json({ result, pass, passengerName });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to log scan' });
+        console.error('Scan processing error:', err);
+        res.status(500).json({ error: 'Failed to process scan' });
     }
 });
 
