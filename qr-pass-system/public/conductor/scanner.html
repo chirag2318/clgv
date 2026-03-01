@@ -244,8 +244,19 @@
     </div>
 
     <div class="dashboard">
+        <!-- Mobile Topbar (visible only on small screens) -->
+        <div class="mobile-topbar" id="mobile-topbar">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+            <div
+                style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;background:var(--gradient-green);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                Conductor</div>
+            <button class="theme-toggle" id="dash-theme-toggle" onclick="toggleTheme()"
+                style="width:36px;height:36px;font-size:1rem;">🌙</button>
+        </div>
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
                 <div class="sidebar-logo-icon"><img src="../images/logo.jpeg" alt="BharatPass"
                         style="width:32px;height:32px;border-radius:8px;object-fit:cover;" /></div>
