@@ -262,7 +262,8 @@ app.post('/api/passes', async (req, res) => {
         await newPass.save();
         res.status(201).json(newPass);
     } catch (err) {
-        res.status(500).json({ error: 'Failed to create pass' });
+        console.error('Pass Creation Error:', err);
+        res.status(500).json({ error: 'Failed to create pass', details: err.message });
     }
 });
 

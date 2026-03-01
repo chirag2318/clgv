@@ -7,7 +7,7 @@ const passSchema = new mongoose.Schema({
     status: { type: String, enum: ['pending', 'active', 'expired', 'rejected'], default: 'pending' },
     validFrom: { type: Date },
     validUntil: { type: Date },
-    qrToken: { type: String, unique: true },
+    qrToken: { type: String, unique: true, sparse: true },
     price: { type: Number, required: true },
     razorpayPaymentId: { type: String },
     createdAt: { type: Date, default: Date.now }
