@@ -2,88 +2,271 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard — BharatPass</title>
-    <link rel="stylesheet" href="../css/style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BharatPass Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .date-edit {
-            padding: 4px 8px;
-            background: rgba(255, 255, 255, 0.05);
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+
+        body {
+            background: #0f172a;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            font-size: 16px;
+            /* Base font size increased */
+        }
+
+        .bg-orbs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 0% 0%, #1e1b4b 0%, #0f172a 100%);
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.5;
+            animation: pulse 12s infinite alternate;
+        }
+
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: #6366f1;
+            top: -150px;
+            right: -100px;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: #a855f7;
+            bottom: -100px;
+            left: -100px;
+            animation-delay: -6s;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+
+            100% {
+                transform: scale(1.15) translate(30px, 50px);
+            }
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 0.82rem;
+            border-radius: 1.5rem;
+            /* Larger corners */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .action-btns {
-            display: flex;
-            gap: 6px;
+        .active-nav-item {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
         }
 
-        .scan-log-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            transition: var(--transition);
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
 
-        .scan-log-item:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .scan-log-icon {
-            font-size: 1.3rem;
-            width: 32px;
-            text-align: center;
-        }
-
-        .scan-log-meta {
-            flex: 1;
-        }
-
-        .scan-log-main {
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .scan-log-sub {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
-        .scan-log-time {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            text-align: right;
-        }
-
-        .filter-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            padding: 6px 16px;
-            border-radius: 999px;
-            font-size: 0.82rem;
-            font-weight: 500;
-            border: 1px solid var(--glass-border);
+        ::-webkit-scrollbar-track {
             background: transparent;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: var(--transition);
         }
 
-        .filter-btn.active {
-            background: rgba(79, 142, 247, 0.15);
-            border-color: rgba(79, 142, 247, 0.4);
-            color: var(--accent-blue);
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .main-content {
+                padding-bottom: 100px;
+            }
+
+            .desktop-sidebar {
+                display: none;
+            }
+
+            h1 {
+                font-size: 1.75rem !important;
+            }
+
+            .stat-value {
+                font-size: 2rem !important;
+            }
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .badge-active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .badge-pending {
+            background: rgba(234, 179, 8, 0.2);
+            color: #facc15;
+            border: 1px solid rgba(234, 179, 8, 0.2);
+        }
+
+        .badge-rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Bigger touch targets for mobile */
+        button,
+        .nav-btn,
+        .mobile-nav-btn {
+            min-height: 44px;
+        }
+
+        /* Light Mode Overrides */
+        body.light-mode {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        body.light-mode .bg-orbs {
+            background: radial-gradient(circle at 0% 0%, #e0e7ff 0%, #f1f5f9 100%);
+        }
+
+        body.light-mode .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            border-color: rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        body.light-mode .active-nav-item,
+        body.light-mode .glass-card.active-nav-item {
+            background: var(--primary-gradient) !important;
+            color: white !important;
+        }
+
+        body.light-mode .text-white {
+            color: #0f172a;
+        }
+
+        body.light-mode .text-slate-400 {
+            color: #475569;
+        }
+
+        body.light-mode .text-slate-300 {
+            color: #334155;
+        }
+
+        body.light-mode .bg-white\/5 {
+            background-color: #f8fafc;
+        }
+
+        body.light-mode .bg-white\/10 {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        body.light-mode .bg-white\/20 {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        body.light-mode .border-white\/5 {
+            border-color: rgba(0, 0, 0, 0.05);
+        }
+
+        body.light-mode .border-white\/10 {
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-mode .border-white\/20 {
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+
+        body.light-mode .border-b\.border-white\/5 {
+            border-bottom-color: rgba(0, 0, 0, 0.05);
+        }
+
+        body.light-mode .divide-y\.divide-white\/10> :not([hidden])~ :not([hidden]) {
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-mode .hover\:bg-white\/5:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+
+        body.light-mode .hover\:bg-white\/10:hover {
+            background-color: rgba(0, 0, 0, 0.06);
+        }
+
+        body.light-mode .hover\:bg-white\/20:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-mode .shadow-2xl {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-mode .ring-indigo-500\/30 {
+            --tw-ring-color: rgba(99, 102, 241, 0.3);
+        }
+
+        body.light-mode .shadow-indigo-500\/30 {
+            --tw-shadow-color: rgba(99, 102, 241, 0.3);
+        }
+
+        body.light-mode .badge-active {
+            background: rgba(34, 197, 94, 0.15);
+            color: #16a34a;
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+
+        body.light-mode .badge-pending {
+            background: rgba(234, 179, 8, 0.15);
+            color: #ca8a04;
+            border-color: rgba(234, 179, 8, 0.2);
+        }
+
+        body.light-mode .badge-rejected {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+            border-color: rgba(239, 68, 68, 0.2);
         }
     </style>
 </head>
@@ -94,416 +277,525 @@
         <div class="orb orb-2"></div>
     </div>
 
-    <div class="dashboard">
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><img src="../images/logo.jpeg" alt="BharatPass"
-                        style="width:32px;height:32px;border-radius:8px;object-fit:cover;" /></div>
-                <span>Admin Panel</span>
+    <div class="flex min-h-screen">
+        <!-- Desktop Sidebar (Wider) -->
+        <aside class="desktop-sidebar w-72 glass-card m-6 hidden lg:flex flex-col">
+            <div class="p-8 flex items-center gap-4">
+                <div
+                    class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-xl shadow-indigo-500/30">
+                    B</div>
+                <span class="text-2xl font-extrabold tracking-tight">BharatPass</span>
             </div>
-            <nav class="sidebar-nav">
-                <div class="sidebar-item active" onclick="switchSection('overview')"><span
-                        class="icon">📊</span><span>Overview</span></div>
-                <div class="sidebar-item" onclick="switchSection('passes')"><span class="icon">🎫</span><span>All
-                        Passes</span></div>
-                <div class="sidebar-link" onclick="switchSection('users')">👥 User Management</div>
-                <div class="sidebar-link" onclick="switchSection('scanlogs')">📋 Scan Logs</div>
-                <div class="sidebar-divider"></div>
-                <div class="sidebar-link" onclick="switchSection('settings')">⚙️ System Settings</div>
+
+            <nav class="flex-1 px-5 space-y-3 mt-4">
+                <button onclick="switchSection('overview')"
+                    class="nav-btn w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all active-nav-item text-lg font-medium"
+                    id="btn-overview">
+                    <span class="text-xl">📊</span> Overview
+                </button>
+                <button onclick="switchSection('passes')"
+                    class="nav-btn w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all hover:bg-white/5 text-lg font-medium"
+                    id="btn-passes">
+                    <span class="text-xl">🎫</span> All Passes
+                </button>
+                <button onclick="switchSection('users')"
+                    class="nav-btn w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all hover:bg-white/5 text-lg font-medium"
+                    id="btn-users">
+                    <span class="text-xl">👥</span> Users
+                </button>
+                <button onclick="switchSection('scanlogs')"
+                    class="nav-btn w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all hover:bg-white/5 text-lg font-medium"
+                    id="btn-scanlogs">
+                    <span class="text-xl">📋</span> Scan Logs
+                </button>
+                <div class="border-t border-white/10 my-6"></div>
+                <button onclick="switchSection('settings')"
+                    class="nav-btn w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all hover:bg-white/5 text-lg font-medium"
+                    id="btn-settings">
+                    <span class="text-xl">⚙️</span> Settings
+                </button>
             </nav>
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar" id="sidebar-user-avatar"
-                        style="background:linear-gradient(135deg,#6c63ff,#4f8ef7);">A</div>
-                    <div class="user-details">
-                        <div class="user-name" id="sidebar-user-name">Admin</div>
-                        <div class="user-role" id="sidebar-user-role">Administrator</div>
+
+            <div class="p-6">
+                <div class="glass-card p-5 rounded-3xl flex items-center gap-4">
+                    <div
+                        class="sidebar-avatar w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-lg shadow-inner">
+                        A</div>
+                    <div class="overflow-hidden">
+                        <p class="text-base font-bold truncate sidebar-name">Admin User</p>
+                        <p class="text-sm text-slate-400">Super Admin</p>
                     </div>
                 </div>
-                <button class="btn btn-secondary btn-sm btn-full" style="margin-top:10px;" onclick="logout()">🚪
-                    Logout</button>
+                <button
+                    class="w-full mt-4 py-3 text-base font-semibold text-red-400 hover:text-red-300 transition-colors"
+                    onclick="logout()">Logout Account</button>
             </div>
         </aside>
 
-        <main class="main-content">
-            <header class="main-header">
-                <h1 id="section-title">Overview</h1>
-                <div style="display:flex;gap:10px;align-items:center;">
-                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
-                    <button class="btn btn-secondary btn-sm" onclick="resetDB();location.reload();">🔄 Reset
-                        Data</button>
+        <!-- Main Content -->
+        <main class="flex-1 p-6 lg:p-10 main-content overflow-y-auto max-h-screen">
+            <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+                <div>
+                    <h1 class="text-3xl lg:text-4xl font-extrabold text-white tracking-tight" id="current-title">
+                        Dashboard Overview</h1>
+                    <p class="text-slate-400 text-base mt-2 font-medium">Welcome back, <span
+                            class="header-name">Admin</span>! Here's your daily report.</p>
+                </div>
+                <div class="flex gap-3 w-full sm:w-auto">
+                    <button id="admin-theme-toggle"
+                        class="glass-card hover:bg-white/10 transition-all font-bold text-sm flex items-center justify-center p-3 rounded-2xl"
+                        onclick="toggleTheme()" style="width: 48px; height: 48px;">
+                        <span class="text-xl">☀️</span>
+                    </button>
+                    <button
+                        class="flex-1 sm:flex-none px-6 py-3 glass-card hover:bg-white/10 transition-all font-bold text-sm flex items-center justify-center gap-2"
+                        onclick="resetDB()">
+                        <span class="text-lg">🔄</span> Refresh Data
+                    </button>
                 </div>
             </header>
 
-            <div class="main-body">
-                <!-- Overview -->
-                <div id="section-overview">
-                    <div class="stats-grid" id="stats-grid" style="margin-bottom:32px;"></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
-                        <div class="card">
-                            <div
-                                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                                <h3 style="font-size:1rem;font-weight:600;">Recent Applications</h3>
-                                <button class="btn btn-secondary btn-sm" onclick="switchSection('passes')">View All
-                                    →</button>
-                            </div>
-                            <div id="recent-passes"></div>
-                        </div>
-                        <div class="card">
-                            <div
-                                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                                <h3 style="font-size:1rem;font-weight:600;">Recent Scans</h3>
-                                <button class="btn btn-secondary btn-sm" onclick="switchSection('scanlogs')">View All
-                                    →</button>
-                            </div>
-                            <div id="recent-scans"></div>
-                        </div>
+            <!-- Section: Overview -->
+            <section id="section-overview" class="section-content space-y-8">
+                <!-- Stats Grid (Bigger Cards) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="glass-card p-7 border-l-8 border-indigo-500 shadow-xl">
+                        <p class="text-slate-400 text-sm font-bold uppercase tracking-widest">Total Passes</p>
+                        <h3 class="text-4xl font-black mt-3 text-white" id="stat-total">0</h3>
+                        <p
+                            class="text-indigo-400 text-xs mt-3 font-bold bg-indigo-500/10 inline-block px-2 py-1 rounded">
+                            Overall recorded</p>
+                    </div>
+                    <div class="glass-card p-7 border-l-8 border-emerald-500 shadow-xl">
+                        <p class="text-slate-400 text-sm font-bold uppercase tracking-widest">Revenue</p>
+                        <h3 class="text-4xl font-black mt-3 text-white" id="stat-revenue">₹0</h3>
+                        <p
+                            class="text-emerald-400 text-xs mt-3 font-bold bg-emerald-500/10 inline-block px-2 py-1 rounded">
+                            Total gathered</p>
+                    </div>
+                    <div class="glass-card p-7 border-l-8 border-amber-500 shadow-xl">
+                        <p class="text-slate-400 text-sm font-bold uppercase tracking-widest">Pending</p>
+                        <h3 class="text-4xl font-black mt-3 text-white" id="stat-pending">0</h3>
+                        <p class="text-amber-400 text-xs mt-3 font-bold bg-amber-500/10 inline-block px-2 py-1 rounded">
+                            ⏳ Needs Action</p>
+                    </div>
+                    <div class="glass-card p-7 border-l-8 border-sky-500 shadow-xl">
+                        <p class="text-slate-400 text-sm font-bold uppercase tracking-widest">Total Scans</p>
+                        <h3 class="text-4xl font-black mt-3 text-white" id="stat-scans">0</h3>
+                        <p class="text-sky-400 text-xs mt-3 font-bold bg-sky-500/10 inline-block px-2 py-1 rounded">📡
+                            System Logs</p>
                     </div>
                 </div>
 
-                <!-- Passes -->
-                <div id="section-passes" style="display:none;">
-                    <div class="filter-bar">
-                        <button class="filter-btn active" data-filter="all"
-                            onclick="filterPasses('all',this)">All</button>
-                        <button class="filter-btn" data-filter="pending" onclick="filterPasses('pending',this)">⏳
-                            Pending</button>
-                        <button class="filter-btn" data-filter="active" onclick="filterPasses('active',this)">✅
-                            Active</button>
-                        <button class="filter-btn" data-filter="expired" onclick="filterPasses('expired',this)">❌
-                            Expired</button>
-                        <button class="filter-btn" data-filter="rejected" onclick="filterPasses('rejected',this)">🚫
-                            Rejected</button>
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Recent Applications -->
+                    <div class="glass-card p-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold text-white">Recent Applications</h3>
+                            <button class="text-sm font-bold text-indigo-400 hover:underline"
+                                onclick="switchSection('passes')">View All</button>
+                        </div>
+                        <div class="space-y-5" id="recent-passes">
+                            <!-- JS Inject -->
+                        </div>
                     </div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
+                    <!-- Recent Scans -->
+                    <div class="glass-card p-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold text-white">Latest Scan Activity</h3>
+                            <button class="text-sm font-bold text-indigo-400 hover:underline"
+                                onclick="switchSection('scanlogs')">Full History</button>
+                        </div>
+                        <div class="space-y-5" id="recent-scans-list">
+                            <!-- JS Inject -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Passes -->
+            <section id="section-passes" class="section-content hidden space-y-8">
+                <div class="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+                    <button onclick="filterPasses('all', this)"
+                        class="filter-btn px-6 py-3 glass-card text-base font-bold whitespace-nowrap active-nav-item">All
+                        Passes</button>
+                    <button onclick="filterPasses('pending', this)"
+                        class="filter-btn px-6 py-3 glass-card text-base font-bold whitespace-nowrap">⏳ Pending</button>
+                    <button onclick="filterPasses('active', this)"
+                        class="filter-btn px-6 py-3 glass-card text-base font-bold whitespace-nowrap">✅ Active</button>
+                    <button onclick="filterPasses('expired', this)"
+                        class="filter-btn px-6 py-3 glass-card text-base font-bold whitespace-nowrap">❌ Expired</button>
+                </div>
+
+                <div class="glass-card overflow-hidden shadow-2xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-base">
+                            <thead class="bg-white/10 border-b border-white/10">
                                 <tr>
-                                    <th>Pass ID</th>
-                                    <th>Passenger</th>
-                                    <th>City</th>
-                                    <th>Type</th>
-                                    <th>Status</th>
-                                    <th>Valid Until</th>
-                                    <th>Price</th>
-                                    <th>Payment ID</th>
-                                    <th>Actions</th>
+                                    <th class="p-6 font-bold text-slate-300">Passenger</th>
+                                    <th class="p-6 font-bold text-slate-300">Details</th>
+                                    <th class="p-6 font-bold text-slate-300">Status</th>
+                                    <th class="p-6 font-bold text-slate-300 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="passes-table-body"></tbody>
+                            <tbody id="passes-table-body" class="divide-y divide-white/10">
+                                <!-- JS Inject -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
+            </section>
 
-                <!-- Users -->
-                <div id="section-users" style="display:none;">
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Passes</th>
-                                    <th>Joined</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body"></tbody>
-                        </table>
+            <!-- Section: Users -->
+            <section id="section-users" class="section-content hidden space-y-8">
+                <div class="glass-card p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="users-list-mobile">
+                        <!-- JS Inject -->
                     </div>
                 </div>
+            </section>
 
-                <!-- Scan Logs -->
-                <div id="section-scanlogs" style="display:none;">
-                    <div class="card" style="padding:0;overflow:hidden;">
-                        <div id="scan-logs-list"></div>
+            <!-- Section: Scan Logs -->
+            <section id="section-scanlogs" class="section-content hidden space-y-6">
+                <div id="scan-logs-full" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- JS Inject -->
+                </div>
+            </section>
+
+            <!-- Section: Settings (Bigger Inputs) -->
+            <section id="section-settings" class="section-content hidden space-y-8">
+                <div class="grid lg:grid-cols-2 gap-10">
+                    <!-- City Management -->
+                    <div class="glass-card p-8">
+                        <h3 class="text-2xl font-black mb-6 flex items-center gap-3">🏙️ City Management</h3>
+                        <div id="city-list" class="flex flex-wrap gap-3 mb-8">
+                            <!-- JS Inject -->
+                        </div>
+                        <div class="flex gap-3">
+                            <input type="text" id="new-city-input" placeholder="Enter city name..."
+                                class="flex-1 bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/30 transition-all text-white">
+                            <button onclick="addCity()"
+                                class="bg-indigo-600 px-8 py-4 rounded-2xl text-lg font-black shadow-lg shadow-indigo-500/30 hover:bg-indigo-500 active:scale-95 transition-all text-white">Add</button>
+                        </div>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="glass-card p-8">
+                        <h3 class="text-2xl font-black mb-6 flex items-center gap-3">💰 Pricing Config (₹)</h3>
+                        <div class="space-y-6">
+                            <div
+                                class="flex justify-between items-center bg-white/10 p-5 rounded-2xl border border-white/10">
+                                <label class="text-lg font-bold">Monthly Pass</label>
+                                <input type="number" id="price-monthly"
+                                    class="w-32 bg-white/20 border-0 rounded-xl px-4 py-2 text-right text-2xl text-indigo-400 font-black focus:ring-0">
+                            </div>
+                            <div
+                                class="flex justify-between items-center bg-white/10 p-5 rounded-2xl border border-white/10">
+                                <label class="text-lg font-bold">Quarterly Pass</label>
+                                <input type="number" id="price-quarterly"
+                                    class="w-32 bg-white/20 border-0 rounded-xl px-4 py-2 text-right text-2xl text-indigo-400 font-black focus:ring-0">
+                            </div>
+                            <div
+                                class="flex justify-between items-center bg-white/10 p-5 rounded-2xl border border-white/10">
+                                <label class="text-lg font-bold">Yearly Pass</label>
+                                <input type="number" id="price-yearly"
+                                    class="w-32 bg-white/20 border-0 rounded-xl px-4 py-2 text-right text-2xl text-indigo-400 font-black focus:ring-0">
+                            </div>
+                            <button onclick="savePrices()"
+                                class="w-full bg-emerald-600 text-white py-5 rounded-2xl text-xl font-black mt-4 shadow-xl shadow-emerald-500/30 hover:bg-emerald-500 active:scale-95 transition-all">Update
+                                All Prices</button>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Settings Section -->
-                <section id="section-settings" style="display:none;">
-                    <div class="section-header">
-                        <h2 class="section-title">⚙️ System Settings</h2>
-                        <p class="section-subtitle">Manage cities and pass pricing</p>
-                    </div>
-
-                    <div
-                        style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:24px;margin-top:24px;">
-                        <!-- City Management -->
-                        <div class="card">
-                            <h3 style="margin-bottom:16px;">🏙️ City Management</h3>
-                            <div id="city-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-                                <!-- Cities will be loaded here -->
-                            </div>
-                            <div style="display:flex;gap:8px;">
-                                <input type="text" id="new-city-input" class="form-control"
-                                    placeholder="Add new city..." style="flex:1;">
-                                <button class="btn btn-primary" onclick="addCity()">Add</button>
-                            </div>
-                        </div>
-
-                        <!-- Price Management -->
-                        <div class="card">
-                            <h3 style="margin-bottom:16px;">💰 Pass Pricing (₹)</h3>
-                            <div class="form-group">
-                                <label class="form-label">Monthly Pass</label>
-                                <input type="number" id="price-monthly" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Quarterly Pass</label>
-                                <input type="number" id="price-quarterly" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Yearly Pass</label>
-                                <input type="number" id="price-yearly" class="form-control">
-                            </div>
-                            <button class="btn btn-primary btn-full" onclick="savePrices()"
-                                style="margin-top:16px;">Save Pricing</button>
-                        </div>
-                    </div>
-                </section>
-            </div>
+            </section>
         </main>
+
+        <!-- Bottom Nav (Enhanced Mobile) -->
+        <nav
+            class="lg:hidden fixed bottom-6 left-6 right-6 h-20 glass-card border border-white/20 flex items-center justify-around px-4 z-50 shadow-2xl">
+            <button onclick="switchSection('overview')"
+                class="flex flex-col items-center gap-1.5 text-xs font-bold text-slate-400 mobile-nav-btn"
+                id="mob-overview">
+                <span class="text-2xl">📊</span> <span>Stats</span>
+            </button>
+            <button onclick="switchSection('passes')"
+                class="flex flex-col items-center gap-1.5 text-xs font-bold text-slate-400 mobile-nav-btn"
+                id="mob-passes">
+                <span class="text-2xl">🎫</span> <span>Passes</span>
+            </button>
+            <button onclick="switchSection('users')"
+                class="flex flex-col items-center gap-1.5 text-xs font-bold text-slate-400 mobile-nav-btn"
+                id="mob-users">
+                <span class="text-2xl">👥</span> <span>Users</span>
+            </button>
+            <button onclick="switchSection('scanlogs')"
+                class="flex flex-col items-center gap-1.5 text-xs font-bold text-slate-400 mobile-nav-btn"
+                id="mob-scanlogs">
+                <span class="text-2xl">📋</span> <span>Logs</span>
+            </button>
+            <button onclick="switchSection('settings')"
+                class="flex flex-col items-center gap-1.5 text-xs font-bold text-slate-400 mobile-nav-btn"
+                id="mob-settings">
+                <span class="text-2xl">⚙️</span> <span>Setup</span>
+            </button>
+        </nav>
     </div>
+
+    <!-- Toast Notification System -->
+    <div id="toast-container" class="fixed top-8 right-8 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
 
     <script src="../js/app.js"></script>
     <script>
-        let currentSession = null;
-        let currentFilter = 'all';
-        let cachedPasses = [];
-        let cachedUsers = []; // Added for consistency, though not explicitly in instruction for this file
-        let currentSettings = null;
+        // Custom toggle integration for Admin UI
+        const originalToggleTheme = window.toggleTheme;
+        window.toggleTheme = function () {
+            if (originalToggleTheme) originalToggleTheme();
+            else {
+                const isLight = document.body.classList.toggle('light-mode');
+                localStorage.setItem('bharatpass_theme', isLight ? 'light' : 'dark');
+            }
+            updateAdminThemeToggle();
+        };
 
-        window.addEventListener('DOMContentLoaded', () => {
-            currentSession = requireAuth('admin');
-            if (!currentSession) return;
-            initSidebar();
-            renderAll();
-        });
+        function updateAdminThemeToggle() {
+            const isLight = document.body.classList.contains('light-mode');
+            const btn = document.getElementById('admin-theme-toggle');
+            if (btn) btn.innerHTML = `<span class="text-xl">${isLight ? '☀️' : '🌙'}</span>`;
+        }
+
+        document.addEventListener('DOMContentLoaded', updateAdminThemeToggle);
+
+        let currentSession = null;
+        let currentPasses = [];
+        let currentUsers = [];
+        let scanLogs = [];
+        let settings = { cities: [], prices: { monthly: 450, quarterly: 1200, yearly: 4500 } };
+        let adminStats = null;
+
+        // --- CORE UI LOGIC ---
 
         function switchSection(name) {
-            ['overview', 'passes', 'users', 'scanlogs', 'settings'].forEach(s => {
-                document.getElementById(`section-${s}`).style.display = s === name ? '' : 'none';
+            document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`section-${name}`).classList.remove('hidden');
+
+            const titles = {
+                overview: 'Dashboard Overview',
+                passes: 'Pass Management',
+                users: 'User Directory',
+                scanlogs: 'Security Logs',
+                settings: 'System Preferences'
+            };
+            document.getElementById('current-title').textContent = titles[name];
+
+            // Update Nav States
+            document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(b => {
+                b.classList.remove('active-nav-item', 'text-indigo-400');
+                if (b.id === `btn-${name}` || b.id === `mob-${name}`) {
+                    if (b.classList.contains('nav-btn')) {
+                        b.classList.add('active-nav-item');
+                    } else {
+                        b.classList.add('text-indigo-400');
+                    }
+                }
             });
-            document.querySelectorAll('.sidebar-item, .sidebar-link').forEach((el) => {
-                el.classList.remove('active');
-            });
-            const activeElement = document.querySelector(`.sidebar-item[onclick="switchSection('${name}')"]`) ||
-                document.querySelector(`.sidebar-link[onclick="switchSection('${name}')"]`);
-            if (activeElement) {
-                activeElement.classList.add('active');
-            }
-            const titles = { overview: 'Overview', passes: 'All Passes', users: 'User Management', scanlogs: 'Scan Logs', settings: 'System Settings' };
-            document.getElementById('section-title').textContent = titles[name] || '';
+
+            // Smooth scroll to top on section switch
+            document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (name === 'overview') renderOverview();
+            if (name === 'passes') renderPasses();
+            if (name === 'users') renderUsers();
+            if (name === 'scanlogs') renderScanLogs();
+            if (name === 'settings') renderSettings();
         }
 
-        async function renderAll() {
+        // --- RENDERERS ---
+
+        async function renderOverview() {
             try {
-                // Fetch settings first
-                currentSettings = await fetch(`${API_URL}/api/settings`).then(r => r.json());
+                if (!adminStats) adminStats = await fetch(`${API_URL}/api/admin/stats`).then(r => r.json());
 
-                cachedPasses = await fetch(`${API_URL}/api/passes`).then(r => r.json());
-                cachedUsers = await fetch(`${API_URL}/api/admin/users`).then(r => r.json());
-                renderStats();
-                renderPasses();
-                renderUsers();
-                renderScanLogs();
-                renderRecentPasses();
-                renderSettings();
-            } catch (err) {
-                console.error('Failed to fetch data:', err);
-                showToast('Failed to load dashboard data', 'error');
-            }
-        }
+                // Stats
+                document.getElementById('stat-total').textContent = adminStats.totalPasses;
+                document.getElementById('stat-revenue').textContent = '₹' + (adminStats.revenue || 0).toLocaleString();
+                document.getElementById('stat-pending').textContent = adminStats.pendingPasses;
+                document.getElementById('stat-scans').textContent = adminStats.logs;
 
-        async function renderStats() {
-            try {
-                const s = await fetch(`${API_URL}/api/admin/stats`).then(r => r.json());
-                const gradients = [
-                    'var(--gradient-primary)', 'var(--gradient-green)', 'var(--gradient-orange)',
-                    'var(--gradient-cyan)', 'linear-gradient(135deg,#6c63ff,#9c89ff)', 'var(--gradient-red)'
-                ];
-                const stats = [
-                    { label: 'Total Passes', value: s.totalPasses, sub: `${s.pendingPasses} pending`, icon: '🎫' },
-                    { label: 'Active Passes', value: s.activePasses, sub: 'Currently valid', icon: '✅' },
-                    { label: 'Total Revenue', value: `₹${(s.revenue || 0).toLocaleString('en-IN')}`, sub: 'All time', icon: '💰' },
-                    { label: 'Total Users', value: s.users, sub: 'Registered passengers', icon: '👥' },
-                    { label: 'Pending Review', value: s.pendingPasses, sub: 'Awaiting approval', icon: '⏳' },
-                    { label: 'Total Scans', value: s.logs, sub: 'By conductors', icon: '📡' },
-                ];
-                document.getElementById('stats-grid').innerHTML = stats.map((st, i) => `
-                    <div class="stat-card" style="border-color:rgba(255,255,255,0.06);">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                        <div class="stat-label">${st.label}</div>
-                        <span style="font-size:1.4rem;">${st.icon}</span>
-                    </div>
-                    <div class="stat-value" style="background:${gradients[i]};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${st.value}</div>
-                    <div class="stat-sub">${st.sub}</div>
-                    </div>`).join('');
-            } catch (err) { console.error('Stats error:', err); }
-        }
-
-        async function fetchAllPasses() {
-            cachedPasses = await fetch(`${API_URL}/api/passes`).then(r => r.json());
-            // Map userId to user object if needed, but the backend is currently simplistic.
-            return cachedPasses;
-        }
-
-        async function renderPasses(filter = 'all') {
-            currentFilter = filter;
-            try {
-                const passes = await fetchAllPasses();
-                const filtered = filter === 'all' ? passes : passes.filter(p => p.status === filter);
-                document.getElementById('passes-table-body').innerHTML = filtered.map(p => `
-                    <tr>
-                    <td style="font-family:monospace;font-size:0.82rem;">${(p.id || p._id).slice(-8).toUpperCase()}</td>
-                    <td>
-                        <div style="font-weight:500;font-size:0.9rem;">${p.name || 'Passenger'}</div>
-                        <div style="font-size:0.75rem;color:var(--text-muted);">ID: ${p.userId || '-'}</div>
-                    </td>
-                    <td style="font-size:0.85rem;">${p.city || p.route}</td>
-                    <td>${getBadgeTypeHTML(p.passType)}</td>
-                    <td>${getBadgeHTML(p.status)}</td>
-                    <td style="font-size:0.85rem;">${formatDate(p.validUntil)}</td>
-                    <td style="color:var(--accent-green);font-weight:600;">₹${p.price}</td>
-                    <td style="font-family:monospace;font-size:0.75rem;color:var(--text-muted);">${p.razorpayPaymentId || '-'}</td>
-                    <td>
-                        <div class="action-btns">
-                        ${p.status === 'pending' ? `
-                            <button class="btn btn-sm" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border:1px solid rgba(0,230,118,0.3);" onclick="approvePass('${p._id}')">✅ Approve</button>
-                            <button class="btn btn-sm" style="background:rgba(255,71,87,0.1);color:var(--accent-red);border:1px solid rgba(255,71,87,0.25);" onclick="rejectPass('${p._id}')">❌ Reject</button>
-                        ` : ''}
-                        </div>
-                    </td>
-                    </tr>`).join('') || `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">No passes found</td></tr>`;
-            } catch (err) { console.error(err); }
-        }
-
-        function filterPasses(filter, el) {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            renderPasses(filter);
-        }
-
-        async function renderUsers() {
-            try {
-                const users = await fetch(`${API_URL}/api/admin/users`).then(r => r.json());
-                document.getElementById('users-table-body').innerHTML = users.map(u => {
-                    const roleColors = { admin: 'var(--accent-indigo)', user: 'var(--accent-blue)', conductor: 'var(--accent-green)' };
-                    return `<tr>
-                        <td>
-                            <div style="display:flex;align-items:center;gap:10px;">
-                            <div style="width:32px;height:32px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">${u.name?.charAt(0)?.toUpperCase()}</div>
-                            <span style="font-weight:500;">${u.name}</span>
+                // Recent Passes
+                const recentContainer = document.getElementById('recent-passes');
+                recentContainer.innerHTML = currentPasses.slice(0, 4).map(p => `
+                    <div class="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-black text-lg">${(p.name || 'P').charAt(0).toUpperCase()}</div>
+                            <div>
+                                <p class="text-base font-bold text-white">${p.name || 'Passenger'}</p>
+                                <p class="text-xs text-slate-400 font-medium uppercase tracking-tighter">${p.city || p.route || 'City'} • ${p.passType}</p>
                             </div>
-                        </td>
-                        <td style="color:var(--text-secondary);font-size:0.88rem;">${u.email}</td>
-                        <td><span style="color:${roleColors[u.role]};font-weight:600;font-size:0.85rem;">${u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span></td>
-                        <td style="font-weight:600;">-</td>
-                        <td style="color:var(--text-muted);font-size:0.85rem;">${formatDate(u.createdAt)}</td>
-                    </tr>`;
-                }).join('');
-            } catch (err) { console.error(err); }
-        }
-
-        async function renderScanLogs() {
-            try {
-                const logs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
-                const icons = { valid: '✅', expired: '❌', invalid: '⛔' };
-                const resultColors = { valid: 'var(--accent-green)', expired: 'var(--accent-orange)', invalid: 'var(--accent-red)' };
-                document.getElementById('scan-logs-list').innerHTML = logs.map(l => `
-                    <div class="scan-log-item">
-                    <div class="scan-log-icon">${icons[l.result] || '❓'}</div>
-                    <div class="scan-log-meta">
-                        <div class="scan-log-main">${l.passengerName || 'Passenger'} — <span style="color:${resultColors[l.result]};font-weight:600;">${l.result?.toUpperCase()}</span></div>
-                        <div class="scan-log-sub">${l.city || l.route || 'City'} · Pass ID: ${(l.passId || '-').slice(-8).toUpperCase()}</div>
+                        </div>
+                        <span class="badge badge-${p.status}">${p.status}</span>
                     </div>
-                    <div class="scan-log-time">${formatDateTime(l.scannedAt)}</div>
-                    </div>`).join('') || '<div style="padding:40px;text-align:center;color:var(--text-muted);">No scan logs yet</div>';
-            } catch (err) { console.error(err); }
+                `).join('') || '<div class="text-center p-4 text-slate-500">No recent applications</div>';
+
+                // Recent Scans
+                const scanContainer = document.getElementById('recent-scans-list');
+                scanContainer.innerHTML = scanLogs.slice(0, 4).map(l => `
+                    <div class="flex items-center gap-4 p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all">
+                        <span class="text-2xl bg-white/5 p-2 rounded-lg">${l.result === 'valid' ? '✅' : '⛔'}</span>
+                        <div class="flex-1">
+                            <p class="text-base font-bold text-white">${l.passengerName || 'Unknown'}</p>
+                            <p class="text-xs text-slate-400 font-medium">${l.city || l.route} • ${new Date(l.scannedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        <span class="text-xs font-black text-slate-500 bg-white/10 px-2 py-1 rounded">ID: ${(l.passId || '-').slice(-6)}</span>
+                    </div>
+                `).join('') || '<div class="text-center p-4 text-slate-500">No recent scans</div>';
+            } catch (e) { console.error(e); }
         }
 
-        async function renderRecentPasses() {
-            const passes = cachedPasses.slice(0, 5);
-            document.getElementById('recent-passes').innerHTML = passes.map(p => `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-                <div>
-                    <div style="font-size:0.85rem;font-weight:500;">Passenger ID: ${p.userId?.slice(-6) || 'New'}</div>
-                    <div style="font-size:0.75rem;color:var(--text-muted);">${p.city || p.route} · ${p.passType}</div>
-                </div>
-                <div style="display:flex;gap:8px;align-items:center;">
-                    ${getBadgeHTML(p.status)}
-                    ${p.status === 'pending' ? `<button class="btn btn-sm" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border:1px solid rgba(0,230,118,0.3);" onclick="approvePass('${p._id}')">✅</button>` : ''}
-                </div>
-                </div>`).join('') || '<div class="empty-state" style="padding:20px;">No passes yet</div>';
+        function renderPasses(filter = 'all') {
+            const tableBody = document.getElementById('passes-table-body');
+            const filtered = filter === 'all' ? currentPasses : currentPasses.filter(p => p.status === filter);
+
+            tableBody.innerHTML = filtered.map(p => `
+                <tr class="hover:bg-white/5 transition-colors border-b border-white/5">
+                    <td class="p-4 sm:p-6">
+                        <div class="font-bold text-base sm:text-lg text-white">${p.name || 'Passenger'}</div>
+                        <div class="text-xs text-slate-400 font-bold tracking-widest uppercase mt-1 hidden sm:block">UID: ${p.userId || '-'}</div>
+                    </td>
+                    <td class="p-4 sm:p-6">
+                        <div class="text-sm sm:text-base text-slate-300 font-medium">${p.city || p.route || 'City'}</div>
+                        <div class="text-xs text-indigo-400 font-black uppercase tracking-widest mt-1">${p.passType}</div>
+                    </td>
+                    <td class="p-4 sm:p-6">
+                        <span class="badge badge-${p.status}">${p.status}</span>
+                    </td>
+                    <td class="p-4 sm:p-6 text-right space-x-1 sm:space-x-3">
+                        ${p.status === 'pending' ? `
+                            <button onclick="approvePass('${p._id}')" class="p-2 sm:p-3 bg-emerald-500/10 hover:bg-emerald-500/30 rounded-xl text-emerald-400 transition-all text-xs sm:text-base">✅ Approve</button>
+                            <button onclick="rejectPass('${p._id}')" class="p-2 sm:p-3 bg-red-500/10 hover:bg-red-500/30 rounded-xl text-red-400 transition-all text-xs sm:text-base hidden sm:inline-block">❌ Reject</button>
+                        ` : '<span class="text-[10px] sm:text-xs text-slate-500 font-black tracking-widest uppercase bg-white/5 px-2 py-1 rounded-lg">Archived</span>'}
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" class="p-10 text-center text-slate-500 font-bold">No data found in this category.</td></tr>';
         }
 
-        async function renderRecentScans() {
-            // Re-using scan log list for simplicity in recent scans for now
-            renderScanLogs();
+        function filterPasses(status, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active-nav-item'));
+            btn.classList.add('active-nav-item');
+            renderPasses(status);
+        }
+
+        function renderUsers() {
+            const container = document.getElementById('users-list-mobile');
+            container.innerHTML = currentUsers.map(u => `
+                <div class="flex items-center gap-5 p-6 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-all hover:scale-[1.02]">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center font-black text-2xl shadow-lg">${(u.name || 'U').charAt(0).toUpperCase()}</div>
+                    <div class="flex-1 overflow-hidden">
+                        <p class="font-black text-lg text-white truncate">${u.name || 'Unknown'}</p>
+                        <p class="text-sm text-slate-400 font-medium truncate">${u.email || '-'}</p>
+                        <span class="inline-block mt-2 px-3 py-1 bg-indigo-500/10 rounded-lg text-xs font-black uppercase tracking-widest text-indigo-400">${u.role}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderScanLogs() {
+            const container = document.getElementById('scan-logs-full');
+            container.innerHTML = scanLogs.map(l => `
+                <div class="glass-card p-6 flex items-center gap-5 border-l-8 ${l.result === 'valid' ? 'border-emerald-500 shadow-emerald-500/10' : 'border-red-500 shadow-red-500/10'}">
+                    <div class="text-3xl bg-white/5 p-3 rounded-2xl">${l.result === 'valid' ? '🚍' : '⚠️'}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-black text-base text-white truncate">${l.passengerName || 'Unknown'}</h4>
+                            <span class="text-[10px] text-slate-500 font-bold uppercase whitespace-nowrap ml-2">${new Date(l.scannedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <p class="text-sm text-slate-400 font-medium">${l.city || l.route} • <span class="text-indigo-400 font-bold">Pass ID: ${(l.passId || '-').slice(-8).toUpperCase()}</span></p>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center w-full p-4 text-slate-500 md:col-span-2">No scan logs found</div>';
         }
 
         function renderSettings() {
-            if (!currentSettings) return;
-
-            // Render Cities
+            // Cities
             const cityContainer = document.getElementById('city-list');
-            cityContainer.innerHTML = currentSettings.cities.map(city => `
-                <div style="background:rgba(255,255,255,0.05);padding:6px 12px;border-radius:20px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,0.1);">
-                    <span style="font-size:0.9rem;">${city}</span>
-                    <span style="cursor:pointer;color:var(--accent-red);font-weight:bold;" onclick="removeCity('${city}')">×</span>
+            cityContainer.innerHTML = (settings.cities || []).map(city => `
+                <div class="flex items-center gap-3 bg-white/10 border border-white/10 px-5 py-2.5 rounded-2xl text-base font-bold hover:bg-white/20 transition-all">
+                    <span>${city}</span>
+                    <button onclick="removeCity('${city}')" class="text-red-400 font-black ml-1 hover:scale-125 transition-transform text-xl">×</button>
                 </div>`).join('');
 
-            // Render Prices
-            document.getElementById('price-monthly').value = currentSettings.prices.monthly;
-            document.getElementById('price-quarterly').value = currentSettings.prices.quarterly;
-            document.getElementById('price-yearly').value = currentSettings.prices.yearly;
+            // Prices
+            if (settings.prices) {
+                document.getElementById('price-monthly').value = settings.prices.monthly || 450;
+                document.getElementById('price-quarterly').value = settings.prices.quarterly || 1200;
+                document.getElementById('price-yearly').value = settings.prices.yearly || 4500;
+            }
+        }
+
+        // --- ACTIONS ---
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-5 rounded-3xl glass-card flex items-center gap-4 shadow-2xl transition-all duration-300 transform translate-x-[120%] opacity-0 border-l-8 ${type === 'success' ? 'border-emerald-500' : 'border-red-500'}`;
+            toast.style.pointerEvents = 'auto';
+            toast.innerHTML = `
+                <span class="text-2xl">${type === 'success' ? '✨' : '⚠️'}</span>
+                <span class="text-base font-bold text-white">${msg}</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-x-[120%]', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-[120%]', 'opacity-0');
+                setTimeout(() => toast.remove(), 400);
+            }, 3500);
         }
 
         async function addCity() {
             const input = document.getElementById('new-city-input');
             const city = input.value.trim();
             if (!city) return;
-            if (currentSettings.cities.includes(city)) {
-                showToast('City already exists', 'error');
+            if (settings.cities.includes(city)) {
+                showToast(`"${city}" already exists!`, 'error');
                 return;
             }
-
-            const newCities = [...currentSettings.cities, city].sort();
-            await updateSettings({ cities: newCities });
-            input.value = '';
+            try {
+                const newCities = [...settings.cities, city].sort();
+                settings = await apiPost('/api/admin/settings', { cities: newCities });
+                input.value = '';
+                renderSettings();
+                showToast(`City "${city}" added successfully!`, 'success');
+            } catch (e) { showToast("Failed to add city", "error"); }
         }
 
         async function removeCity(city) {
             if (!confirm(`Are you sure you want to remove ${city}?`)) return;
-            const newCities = currentSettings.cities.filter(c => c !== city);
-            await updateSettings({ cities: newCities });
+            try {
+                const newCities = settings.cities.filter(c => c !== city);
+                settings = await apiPost('/api/admin/settings', { cities: newCities });
+                renderSettings();
+                showToast(`City removed`, 'success');
+            } catch (e) { showToast("Failed to remove city", "error"); }
         }
 
         async function savePrices() {
-            const prices = {
-                monthly: parseInt(document.getElementById('price-monthly').value),
-                quarterly: parseInt(document.getElementById('price-quarterly').value),
-                yearly: parseInt(document.getElementById('price-yearly').value)
-            };
-            await updateSettings({ prices });
+            try {
+                const prices = {
+                    monthly: parseInt(document.getElementById('price-monthly').value),
+                    quarterly: parseInt(document.getElementById('price-quarterly').value),
+                    yearly: parseInt(document.getElementById('price-yearly').value)
+                };
+                settings = await apiPost('/api/admin/settings', { prices });
+                showToast('New pricing model applied!', 'success');
+            } catch (e) { showToast("Failed to save prices", "error"); }
         }
 
-        async function updateSettings(data) {
+        async function approvePass(id) {
             try {
-                const res = await apiPost('/api/admin/settings', data);
-                currentSettings = res;
-                renderSettings();
-                showToast('Settings updated!', 'success');
-            } catch (err) {
-                showToast('Failed to update settings', 'error');
-            }
-        }
-
-        // Actions
-        async function approvePass(passId) {
-            try {
-                const pass = cachedPasses.find(p => p._id === passId);
+                const pass = currentPasses.find(p => p._id === id);
                 if (!pass) return;
 
                 const durations = { monthly: 30, quarterly: 90, yearly: 365 };
@@ -514,34 +806,68 @@
                 const validUntil = addDays(new Date(), days);
 
                 await apiPost('/api/admin/approve-pass', {
-                    passId,
+                    passId: id,
                     validFrom,
                     validUntil,
                     qrToken
                 });
-                showToast('Pass approved and active!', 'success');
-                renderAll();
-            } catch (err) { showToast('Approval failed', 'error'); }
+                showToast(`Success! Approved pass.`, 'success');
+                await fetchAllData();
+                renderPasses();
+                renderOverview();
+            } catch (e) { showToast("Failed to approve", "error"); }
         }
 
-        async function rejectPass(passId) {
+        async function rejectPass(id) {
             try {
-                await apiPost('/api/admin/reject-pass', { passId });
-                showToast('Pass rejected.', 'info');
-                renderAll();
-            } catch (err) { showToast('Rejection failed', 'error'); }
+                await apiPost('/api/admin/reject-pass', { passId: id });
+                showToast(`Application rejected`, 'success');
+                await fetchAllData();
+                renderPasses();
+                renderOverview();
+            } catch (e) { showToast("Failed to reject", "error"); }
         }
 
         async function resetDB() {
-            if (!confirm('This will clear all registered data and reset to demo state. Continue?')) return;
+            if (!confirm("This will clear all data and reset DB. Continue?")) return;
             try {
+                showToast("Refreshing systems...", "success");
                 await apiPost('/api/admin/seed', {});
-                showToast('Database reset successfully!', 'success');
-                location.reload();
-            } catch (err) { showToast('Reset failed', 'error'); }
+                setTimeout(() => location.reload(), 1000);
+            } catch (e) { showToast("Reset failed", "error"); }
         }
+
+        function logout() {
+            showToast("Session terminating...", "success");
+            setTimeout(() => {
+                clearSession();
+                window.location.href = '../login.html';
+            }, 1000);
+        }
+
+        async function fetchAllData() {
+            try {
+                settings = await fetch(`${API_URL}/api/settings`).then(r => r.json());
+                currentPasses = await fetch(`${API_URL}/api/passes`).then(r => r.json());
+                currentUsers = await fetch(`${API_URL}/api/admin/users`).then(r => r.json());
+                scanLogs = await fetch(`${API_URL}/api/conductor/logs`).then(r => r.json());
+                adminStats = await fetch(`${API_URL}/api/admin/stats`).then(r => r.json());
+            } catch (e) { console.error("Could not fetch fully realtime data:", e); }
+        }
+
+        // Initialize
+        window.onload = async () => {
+            currentSession = requireAuth('admin');
+            if (!currentSession) return;
+
+            document.querySelector('.sidebar-name').textContent = currentSession.name;
+            document.querySelector('.sidebar-avatar').textContent = currentSession.name.charAt(0).toUpperCase();
+            document.querySelector('.header-name').textContent = currentSession.name;
+
+            await fetchAllData();
+            switchSection('overview');
+        };
     </script>
 </body>
 
 </html>
-```
