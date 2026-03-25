@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -527,20 +527,24 @@
 
         function processManualToken() {
             const val = document.getElementById('manual-token').value.trim();
-            if (val) processTokenString(val);
+            if (val) processTokenString(val, true);
             document.getElementById('manual-token').value = '';
         }
 
-        async function processTokenString(rawText) {
+        async function processTokenString(rawText, isManual = false) {
             let token = rawText;
+            let timestamp = null;
             try {
                 const qrData = JSON.parse(rawText);
                 if (qrData.token) token = qrData.token;
+                if (qrData.timestamp) timestamp = qrData.timestamp;
             } catch (e) { }
 
             try {
                 const res = await apiPost('/api/conductor/scan', {
                     qrToken: token,
+                    timestamp: timestamp,
+                    isManual: isManual,
                     conductorId: currentSession.id
                 });
                 const { result, pass, passengerName } = res;
@@ -572,6 +576,11 @@
                 resTitle.textContent = 'Expired';
                 resTitle.style.color = 'var(--accent-orange)';
                 document.getElementById('res-msg').textContent = 'Pass expired. Passenger needs renewal.';
+            } else if (status === 'invalid_time') {
+                resIcon.textContent = '⏱️';
+                resTitle.textContent = 'QR Timeout';
+                resTitle.style.color = 'var(--accent-red)';
+                document.getElementById('res-msg').textContent = 'QR older than 1 minute. Ask passenger to refresh app.';
             } else {
                 resIcon.textContent = '❌';
                 resTitle.textContent = 'Invalid';

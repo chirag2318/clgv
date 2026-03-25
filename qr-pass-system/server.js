@@ -1,4 +1,4 @@
-﻿// =====================================================
+// =====================================================
 // BharatPass — Express Server
 // Serves static files + provides QR generation API
 // =====================================================
@@ -399,11 +399,24 @@ app.post('/api/admin/settings', async (req, res) => {
 // Process and Log a scan
 app.post('/api/conductor/scan', async (req, res) => {
     try {
-        const { qrToken, conductorId } = req.body;
+        const { qrToken, timestamp, isManual, conductorId } = req.body;
 
         if (!qrToken) {
             return res.json({ result: 'invalid' });
         }
+
+        // --- Dynamic QR TOTP Validation ---
+        if (!isManual) {
+            if (!timestamp) {
+                return res.json({ result: 'invalid_time' });
+            }
+            const timeDiff = Date.now() - timestamp;
+            // Enforce strictly 60 seconds validity
+            if (timeDiff > 60000 || timeDiff < -10000) {
+                return res.json({ result: 'invalid_time' });
+            }
+        }
+        // ----------------------------------
 
         // Find the pass by QR token
         const pass = await Pass.findOne({ qrToken });
