@@ -534,16 +534,19 @@
         async function processTokenString(rawText, isManual = false) {
             let token = rawText;
             let timestamp = null;
+            let passId = null;
             try {
                 const qrData = JSON.parse(rawText);
                 if (qrData.token) token = qrData.token;
                 if (qrData.timestamp) timestamp = qrData.timestamp;
+                if (qrData.passId) passId = qrData.passId;
             } catch (e) { }
 
             try {
                 const res = await apiPost('/api/conductor/scan', {
                     qrToken: token,
                     timestamp: timestamp,
+                    passId: passId,
                     isManual: isManual,
                     conductorId: currentSession.id
                 });

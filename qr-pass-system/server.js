@@ -399,7 +399,7 @@ app.post('/api/admin/settings', async (req, res) => {
 // Process and Log a scan
 app.post('/api/conductor/scan', async (req, res) => {
     try {
-        const { qrToken, timestamp, isManual, conductorId } = req.body;
+        const { qrToken, timestamp, isManual, passId, conductorId } = req.body;
 
         if (!qrToken) {
             return res.json({ result: 'invalid' });
@@ -418,8 +418,18 @@ app.post('/api/conductor/scan', async (req, res) => {
         }
         // ----------------------------------
 
-        // Find the pass by QR token
-        const pass = await Pass.findOne({ qrToken });
+        // Find the pass by passId (preferably) or QR token
+        let pass = null;
+        if (passId) {
+            pass = await Pass.findById(passId);
+            // Dynamic token must start with the original qrToken base
+            if (pass && !qrToken.startsWith(pass.qrToken)) {
+                pass = null;
+            }
+        } else {
+            pass = await Pass.findOne({ qrToken });
+        }
+
         if (!pass) {
             return res.json({ result: 'invalid' });
         }

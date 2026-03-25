@@ -517,8 +517,10 @@
 
                 // Generate QR code locally to include the current timestamp (TOTP)
                 const generateLocalQR = async () => {
+                    // Make token look dynamic too
+                    const dynamicTkn = pass.qrToken + '-' + Math.floor(1000 + Math.random() * 9000);
                     const qrData = JSON.stringify({
-                        token: pass.qrToken,
+                        token: dynamicTkn,
                         passId: pass._id,
                         city: pass.city || pass.route,
                         name: currentSession.name,
@@ -533,24 +535,42 @@
                             errorCorrectionLevel: 'M',
                         });
                         qrDiv.innerHTML = `<img src="${qrDataUrl}" width="180" height="180" style="border-radius:8px;display:block;" alt="Dynamic QR Code"/>`;
+                        
+                        const tokenDisplay = document.getElementById('qr-token-display');
+                        if (tokenDisplay) tokenDisplay.textContent = `Token: ${dynamicTkn}`;
+                        
+                        timeLeft = 60;
+                        updateTimerDisplay();
                     } catch (err) {
                         qrDiv.innerHTML = '<div style="color:red;padding:20px;">QR generation failed</div>';
                     }
                 };
 
-                // Initial generation
-                await generateLocalQR();
+                let timeLeft = 60;
+                const updateTimerDisplay = () => {
+                    const timerEl = document.getElementById('qr-timer-display');
+                    if (timerEl) {
+                        timerEl.innerHTML = `<strong>00:${timeLeft.toString().padStart(2, '0')}</strong>`;
+                    }
+                };
 
-                // Refresh the QR every 30 seconds
+                // Clear any existing intervals
                 if (window.qrRefreshInterval) clearInterval(window.qrRefreshInterval);
-                window.qrRefreshInterval = setInterval(() => {
+                if (window.qrTimerInterval) clearInterval(window.qrTimerInterval);
+
+                window.qrTimerInterval = setInterval(() => {
                     const modal = document.getElementById('qr-modal');
                     if (!modal || !modal.classList.contains('active')) {
-                        clearInterval(window.qrRefreshInterval);
+                        clearInterval(window.qrTimerInterval);
                         return;
                     }
-                    generateLocalQR();
-                }, 30000); // 30 seconds
+                    timeLeft--;
+                    if (timeLeft <= 0) {
+                        generateLocalQR();
+                    } else {
+                        updateTimerDisplay();
+                    }
+                }, 1000);
 
                 document.getElementById('qr-pass-info').innerHTML = `
                     <div style="background:rgba(255,255,255,0.04);border-radius:var(--radius-md);padding:16px;margin-top:4px;">
@@ -558,9 +578,15 @@
                     <div class="pass-info-row"><span class="pass-info-label">City</span><span class="pass-info-value">${pass.city || pass.route}</span></div>
                     <div class="pass-info-row"><span class="pass-info-label">Type</span><span class="pass-info-value">${pass.passType}</span></div>
                     <div class="pass-info-row"><span class="pass-info-label">Valid Until</span><span class="pass-info-value" style="color:var(--accent-green);">${formatDate(pass.validUntil)}</span></div>
-                    <div class="pass-info-row" style="margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px;"><span class="pass-info-label" style="color:var(--accent-orange)"><i style="font-size:12px;">⌚ Auto-updates every 30s</i></span></div>
+                    <div class="pass-info-row" style="margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 12px; justify-content: center;">
+                        <span class="pass-info-label" style="color:var(--accent-orange); font-size: 1.1rem;">
+                            Valid for <span id="qr-timer-display"><strong>00:60</strong></span>
+                        </span>
+                    </div>
                     </div>`;
-                document.getElementById('qr-token-display').textContent = `Token: ${pass.qrToken}`;
+                
+                // Initial generation
+                await generateLocalQR();
             } catch (err) {
                 showToast('Failed to load QR code', 'error');
             }
