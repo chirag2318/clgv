@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -143,6 +143,12 @@
             background: rgba(239, 68, 68, 0.2);
             color: #f87171;
             border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-approved {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.2);
         }
 
         .no-scrollbar::-webkit-scrollbar {
@@ -421,6 +427,8 @@
                         Passes</button>
                     <button onclick="filterPasses('pending', this)"
                         class="filter-btn px-6 py-3 glass-card text-base font-bold whitespace-nowrap">⏳ Pending</button>
+                    <button onclick="filterPasses('approved', this)"
+                        class="filter-btn px-6 py-3 glass-card text-base font-bold whitespace-nowrap">📋 Approved</button>
                     <button onclick="filterPasses('active', this)"
                         class="filter-btn px-6 py-3 glass-card text-base font-bold whitespace-nowrap">✅ Active</button>
                     <button onclick="filterPasses('expired', this)"
@@ -658,8 +666,13 @@
             tableBody.innerHTML = filtered.map(p => `
                 <tr class="hover:bg-white/5 transition-colors border-b border-white/5">
                     <td class="p-4 sm:p-6">
-                        <div class="font-bold text-base sm:text-lg text-white">${p.name || 'Passenger'}</div>
-                        <div class="text-xs text-slate-400 font-bold tracking-widest uppercase mt-1 hidden sm:block">UID: ${p.userId || '-'}</div>
+                        <div class="flex items-center gap-3">
+                            ${p.userPhoto ? `<img src="${p.userPhoto}" class="w-12 h-12 rounded-full object-cover border-2 border-indigo-500/50" />` : `<div class="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center font-black text-lg text-indigo-400">${(p.name || 'P').charAt(0).toUpperCase()}</div>`}
+                            <div>
+                                <div class="font-bold text-base sm:text-lg text-white">${p.name || 'Passenger'}</div>
+                                <div class="text-xs text-slate-400 font-bold tracking-widest uppercase mt-1 hidden sm:block">UID: ${p.userId || '-'}</div>
+                            </div>
+                        </div>
                     </td>
                     <td class="p-4 sm:p-6">
                         <div class="text-sm sm:text-base text-slate-300 font-medium">${p.city || p.route || 'City'}</div>
@@ -672,7 +685,7 @@
                         ${p.status === 'pending' ? `
                             <button onclick="approvePass('${p._id}')" class="p-2 sm:p-3 bg-emerald-500/10 hover:bg-emerald-500/30 rounded-xl text-emerald-400 transition-all text-xs sm:text-base">✅ Approve</button>
                             <button onclick="rejectPass('${p._id}')" class="p-2 sm:p-3 bg-red-500/10 hover:bg-red-500/30 rounded-xl text-red-400 transition-all text-xs sm:text-base hidden sm:inline-block">❌ Reject</button>
-                        ` : '<span class="text-[10px] sm:text-xs text-slate-500 font-black tracking-widest uppercase bg-white/5 px-2 py-1 rounded-lg">Archived</span>'}
+                        ` : '<span class="text-[10px] sm:text-xs text-slate-500 font-black tracking-widest uppercase bg-white/5 px-2 py-1 rounded-lg">' + (p.status === 'approved' ? '💳 Awaiting Payment' : 'Archived') + '</span>'}
                     </td>
                 </tr>
             `).join('') || '<tr><td colspan="4" class="p-10 text-center text-slate-500 font-bold">No data found in this category.</td></tr>';
@@ -795,23 +808,8 @@
 
         async function approvePass(id) {
             try {
-                const pass = currentPasses.find(p => p._id === id);
-                if (!pass) return;
-
-                const durations = { monthly: 30, quarterly: 90, yearly: 365 };
-                const days = durations[pass.passType] || 30;
-
-                const qrToken = generateToken();
-                const validFrom = new Date().toISOString().split('T')[0];
-                const validUntil = addDays(new Date(), days);
-
-                await apiPost('/api/admin/approve-pass', {
-                    passId: id,
-                    validFrom,
-                    validUntil,
-                    qrToken
-                });
-                showToast(`Success! Approved pass.`, 'success');
+                await apiPost('/api/admin/approve-pass', { passId: id });
+                showToast(`Pass approved! User can now pay.`, 'success');
                 await fetchAllData();
                 renderPasses();
                 renderOverview();

@@ -4,12 +4,14 @@ const passSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     city: { type: String, required: true },
     passType: { type: String, enum: ['monthly', 'quarterly', 'yearly'], required: true },
-    status: { type: String, enum: ['pending', 'active', 'expired', 'rejected'], default: 'pending' },
+    status: { type: String, enum: ['pending', 'approved', 'active', 'expired', 'rejected'], default: 'pending' },
     validFrom: { type: Date },
     validUntil: { type: Date },
     qrToken: { type: String, unique: true, sparse: true },
     price: { type: Number, required: true },
     razorpayPaymentId: { type: String },
+    currentOtp: { type: String, default: null },
+    otpExpiresAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now }
 });
 

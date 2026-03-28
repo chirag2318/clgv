@@ -4,6 +4,7 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    photo: { type: String, default: null }, // base64 selfie for identity verification
     role: { type: String, enum: ['user', 'admin', 'conductor'], default: 'user' },
     createdAt: { type: Date, default: Date.now }
 });

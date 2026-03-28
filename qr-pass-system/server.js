@@ -26,7 +26,14 @@ if (MONGODB_URI && (MONGODB_URI.indexOf('<password>') === -1 && MONGODB_URI.inde
         socketTimeoutMS: 45000,
         family: 4
     })
-        .then(() => console.log('  📦 Connected to MongoDB Atlas'))
+        .then(async () => {
+            console.log('  📦 Connected to MongoDB Atlas');
+            // Auto-fix: drop old non-sparse qrToken index
+            try {
+                await mongoose.connection.collection('passes').dropIndex('qrToken_1');
+                console.log('  🔧 Dropped old qrToken_1 index (will recreate as sparse)');
+            } catch (e) { /* Index doesn't exist or already sparse — OK */ }
+        })
         .catch(err => {
             console.error('  ❌ MongoDB connection error:', err.message);
             console.error('  🛑 SERVER STOPPED: Real Database connection is required. Please check your credentials.');
@@ -59,7 +66,7 @@ let mockData = {
 // Middleware
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // =====================================================
 // Admin Seed API (Utility)
@@ -188,13 +195,13 @@ app.post('/api/auth/register', async (req, res) => {
         return res.status(201).json({ id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role });
     }
     try {
-        const { name, email, password, role } = req.body;
+        const { name, email, password, role, photo } = req.body;
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: 'User already exists' });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ name, email, password: hashedPassword, role });
+        const newUser = new User({ name, email, password: hashedPassword, role, photo: photo || null });
         await newUser.save();
         res.status(201).json({
             id: newUser._id,
@@ -265,8 +272,19 @@ app.get('/api/passes', async (req, res) => {
         let query = {};
         if (userId) query.userId = userId;
 
-        const passes = await Pass.find(query).sort({ createdAt: -1 });
-        res.json(passes);
+        const passes = await Pass.find(query).sort({ createdAt: -1 }).populate('userId', 'name email photo');
+        // Flatten user info for frontend
+        const passesWithUser = passes.map(p => {
+            const obj = p.toObject();
+            if (obj.userId && typeof obj.userId === 'object') {
+                obj.name = obj.userId.name;
+                obj.email = obj.userId.email;
+                obj.userPhoto = obj.userId.photo;
+                obj.userId = obj.userId._id;
+            }
+            return obj;
+        });
+        res.json(passesWithUser);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch passes' });
     }
@@ -307,32 +325,57 @@ app.post('/api/passes', async (req, res) => {
 
 // =====================================================
 // Admin API
-// Approve a pass
+// Approve a pass (admin photo review → approved, not yet active)
 app.post('/api/admin/approve-pass', async (req, res) => {
-    if (isMockMode) {
-        const { passId, validFrom, validUntil, qrToken, razorpayPaymentId } = req.body;
-        const pass = mockData.passes.find(p => p._id === passId);
-        if (pass) {
-            pass.status = 'active';
-            pass.validFrom = validFrom;
-            pass.validUntil = validUntil;
-            pass.qrToken = qrToken;
-            pass.razorpayPaymentId = razorpayPaymentId;
-        }
-        return res.json({ message: 'Pass approved (Mock)' });
-    }
     try {
-        const { passId, validFrom, validUntil, qrToken, razorpayPaymentId } = req.body;
+        const { passId } = req.body;
         const pass = await Pass.findByIdAndUpdate(passId, {
-            status: 'active',
-            validFrom,
-            validUntil,
-            qrToken,
-            razorpayPaymentId
+            status: 'approved'
         }, { new: true });
         res.json(pass);
     } catch (err) {
         res.status(500).json({ error: 'Failed to approve pass' });
+    }
+});
+
+// Activate pass after payment (approved → active)
+app.post('/api/passes/activate', async (req, res) => {
+    try {
+        const { passId, razorpayPaymentId } = req.body;
+        console.log(`[PASS_ACTIVATE] Attempting activation for Pass ID: ${passId}, Payment: ${razorpayPaymentId}`);
+        
+        const pass = await Pass.findById(passId);
+        if (!pass) {
+            console.error('[PASS_ACTIVATE] Pass not found:', passId);
+            return res.status(404).json({ error: 'Pass not found' });
+        }
+        
+        if (pass.status !== 'approved') {
+            console.warn('[PASS_ACTIVATE] Pass status is not approved:', pass.status);
+            return res.status(400).json({ error: `Pass is not approved (Status: ${pass.status})` });
+        }
+
+        // Generate safe dates based on the pass type
+        const durations = { monthly: 30, quarterly: 90, yearly: 365 };
+        const days = durations[pass.passType] || 30;
+        const validFromDate = new Date();
+        const validUntilDate = new Date(validFromDate.getTime() + days * 24 * 60 * 60 * 1000);
+        
+        // Generate secure 32-character hex token using Node's built-in crypto module
+        const secureQrToken = require('crypto').randomBytes(16).toString('hex');
+        
+        pass.status = 'active';
+        pass.validFrom = validFromDate;
+        pass.validUntil = validUntilDate;
+        pass.qrToken = secureQrToken;
+        pass.razorpayPaymentId = razorpayPaymentId || 'pay_mock_' + Math.random().toString(36).substr(2, 9);
+        
+        await pass.save();
+        console.log('[PASS_ACTIVATE] Pass activated successfully:', passId);
+        res.json(pass);
+    } catch (err) {
+        console.error('[PASS_ACTIVATE] Server Error:', err);
+        res.status(500).json({ error: 'Failed to activate pass', details: err.message });
     }
 });
 
@@ -393,41 +436,68 @@ app.post('/api/admin/settings', async (req, res) => {
 });
 
 // =====================================================
+// OTP-Based QR Generation API
+// =====================================================
+app.post('/api/qr/generate-otp', async (req, res) => {
+    try {
+        const { passId, userId } = req.body;
+        if (!passId || !userId) {
+            return res.status(400).json({ error: 'passId and userId are required' });
+        }
+
+        const pass = await Pass.findById(passId);
+        if (!pass) return res.status(404).json({ error: 'Pass not found' });
+        if (pass.userId.toString() !== userId) return res.status(403).json({ error: 'Unauthorized' });
+        if (pass.status !== 'active') return res.status(400).json({ error: 'Pass is not active' });
+
+        // Check if pass is expired by date
+        if (pass.validUntil && new Date(pass.validUntil) < new Date()) {
+            pass.status = 'expired';
+            await pass.save();
+            return res.status(400).json({ error: 'Pass has expired' });
+        }
+
+        // Generate 6-digit OTP
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        pass.currentOtp = otp;
+        pass.otpExpiresAt = new Date(Date.now() + 60 * 1000); // 60 seconds
+        await pass.save();
+
+        res.json({ otp, expiresAt: pass.otpExpiresAt });
+    } catch (err) {
+        console.error('OTP generation error:', err);
+        res.status(500).json({ error: 'Failed to generate OTP' });
+    }
+});
+
+// =====================================================
 // Conductor API
 // =====================================================
 
-// Process and Log a scan
+// Process and Log a scan (OTP-based validation)
 app.post('/api/conductor/scan', async (req, res) => {
     try {
-        const { qrToken, timestamp, isManual, passId, conductorId } = req.body;
+        const { passId, otp, qrToken, isManual, conductorId } = req.body;
+        console.log('[SCAN] Incoming:', JSON.stringify({ passId, otp, qrToken, isManual, conductorId }));
 
-        if (!qrToken) {
+        // Must have either passId+otp (QR scan), otp only (manual), or qrToken (legacy)
+        if (!passId && !qrToken && !otp) {
+            console.log('[SCAN] No passId, qrToken, or otp provided');
             return res.json({ result: 'invalid' });
         }
 
-        // --- Dynamic QR TOTP Validation ---
-        if (!isManual) {
-            if (!timestamp) {
-                return res.json({ result: 'invalid_time' });
-            }
-            const timeDiff = Date.now() - timestamp;
-            // Enforce strictly 60 seconds validity
-            if (timeDiff > 60000 || timeDiff < -10000) {
-                return res.json({ result: 'invalid_time' });
-            }
-        }
-        // ----------------------------------
-
-        // Find the pass by passId (preferably) or QR token
+        // Find the pass
         let pass = null;
         if (passId) {
-            pass = await Pass.findById(passId);
-            // Dynamic token must start with the original qrToken base
-            if (pass && !qrToken.startsWith(pass.qrToken)) {
-                pass = null;
-            }
-        } else {
+            pass = await Pass.findById(passId).catch(() => null);
+            console.log('[SCAN] Found pass by ID:', pass ? pass._id : 'NOT FOUND');
+        } else if (otp && !qrToken) {
+            // Manual OTP entry — find active pass with this OTP
+            pass = await Pass.findOne({ currentOtp: otp, status: 'active' });
+            console.log('[SCAN] Found pass by OTP:', pass ? pass._id : 'NOT FOUND');
+        } else if (qrToken) {
             pass = await Pass.findOne({ qrToken });
+            console.log('[SCAN] Found pass by qrToken:', pass ? pass._id : 'NOT FOUND');
         }
 
         if (!pass) {
@@ -438,7 +508,7 @@ app.post('/api/conductor/scan', async (req, res) => {
         const user = await User.findById(pass.userId);
         const passengerName = user ? user.name : 'Unknown';
 
-        // Determine result
+        // Check pass validity first
         let result = 'valid';
         if (pass.status === 'expired' || (pass.validUntil && new Date(pass.validUntil) < new Date())) {
             result = 'expired';
@@ -448,6 +518,22 @@ app.post('/api/conductor/scan', async (req, res) => {
             }
         } else if (pass.status !== 'active') {
             result = 'invalid';
+        }
+
+        // OTP validation (only for QR scans, not manual token entry)
+        if (result === 'valid' && otp && !isManual) {
+            if (!pass.currentOtp) {
+                result = 'otp_used'; // OTP already consumed
+            } else if (pass.currentOtp !== otp) {
+                result = 'invalid'; // wrong OTP
+            } else if (pass.otpExpiresAt && new Date(pass.otpExpiresAt) < new Date()) {
+                result = 'otp_expired'; // OTP timed out
+            } else {
+                // OTP is valid — consume it (one-time use)
+                pass.currentOtp = null;
+                pass.otpExpiresAt = null;
+                await pass.save();
+            }
         }
 
         // Create scan log
@@ -460,7 +546,7 @@ app.post('/api/conductor/scan', async (req, res) => {
         });
         await log.save();
 
-        res.json({ result, pass, passengerName });
+        res.json({ result, pass, passengerName, passengerPhoto: user ? user.photo : null });
     } catch (err) {
         console.error('Scan processing error:', err);
         res.status(500).json({ error: 'Failed to process scan' });

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -266,7 +266,39 @@
                     <input type="password" class="form-input" id="reg-password" placeholder="Choose a password"
                         minlength="6" required />
                 </div>
+
+                <!-- Photo Upload -->
+                <div class="form-group">
+                    <label class="form-label">📸 Your Photo (Identity Verification)</label>
+                    <p style="font-size:0.78rem; color:var(--text-muted); margin:0 0 10px;">
+                        Conductor will verify your face during scan. Upload a clear face photo.
+                    </p>
+                    <div style="display:flex; gap:8px; margin-bottom:10px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('photo-file').click()" style="flex:1;">
+                            📁 Upload Photo
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="openCamera()" style="flex:1;">
+                            📷 Take Selfie
+                        </button>
+                    </div>
+                    <input type="file" id="photo-file" accept="image/*" style="display:none;" onchange="handlePhotoFile(event)" />
+                    <!-- Camera preview -->
+                    <div id="camera-container" style="display:none; margin-bottom:10px;">
+                        <video id="camera-preview" autoplay playsinline style="width:100%; border-radius:12px; background:#000;"></video>
+                        <button type="button" class="btn btn-primary btn-sm btn-full" onclick="capturePhoto()" style="margin-top:8px;">
+                            📸 Capture
+                        </button>
+                    </div>
+                    <!-- Photo preview -->
+                    <div id="photo-preview-wrap" style="display:none; text-align:center;">
+                        <img id="photo-preview" style="width:120px; height:120px; object-fit:cover; border-radius:50%; border:3px solid var(--accent-blue);" />
+                        <p style="font-size:0.78rem; color:var(--accent-green); margin:6px 0 0;">✅ Photo captured</p>
+                    </div>
+                    <canvas id="photo-canvas" style="display:none;"></canvas>
+                </div>
+
                 <input type="hidden" id="reg-role" value="user" />
+                <input type="hidden" id="reg-photo" value="" />
                 <button type="submit" class="btn btn-primary btn-full" id="register-btn">
                     Create My Account →
                 </button>
@@ -292,6 +324,7 @@
         }
 
         let selectedRole = 'user';
+        let cameraStream = null;
 
         function switchTab(tab) {
             document.getElementById('form-login').classList.toggle('active', tab === 'login');
@@ -299,6 +332,78 @@
             document.getElementById('toggle-login').classList.toggle('active', tab === 'login');
             document.getElementById('toggle-register').classList.toggle('active', tab === 'register');
             hideError();
+            // Stop camera when switching tabs
+            if (tab === 'login' && cameraStream) stopCamera();
+        }
+
+        // ===== Photo Functions =====
+        function openCamera() {
+            const container = document.getElementById('camera-container');
+            const video = document.getElementById('camera-preview');
+            container.style.display = 'block';
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 300, height: 300 } })
+                .then(stream => {
+                    cameraStream = stream;
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    alert('Camera access denied. Please upload a photo instead.');
+                    container.style.display = 'none';
+                });
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+            }
+            document.getElementById('camera-container').style.display = 'none';
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('camera-preview');
+            const canvas = document.getElementById('photo-canvas');
+            canvas.width = 300;
+            canvas.height = 300;
+            const ctx = canvas.getContext('2d');
+            // Center-crop the video
+            const size = Math.min(video.videoWidth, video.videoHeight);
+            const sx = (video.videoWidth - size) / 2;
+            const sy = (video.videoHeight - size) / 2;
+            ctx.drawImage(video, sx, sy, size, size, 0, 0, 300, 300);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            setPhotoPreview(dataUrl);
+            stopCamera();
+        }
+
+        function handlePhotoFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.getElementById('photo-canvas');
+                    canvas.width = 300;
+                    canvas.height = 300;
+                    const ctx = canvas.getContext('2d');
+                    const size = Math.min(img.width, img.height);
+                    const sx = (img.width - size) / 2;
+                    const sy = (img.height - size) / 2;
+                    ctx.drawImage(img, sx, sy, size, size, 0, 0, 300, 300);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    setPhotoPreview(dataUrl);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setPhotoPreview(dataUrl) {
+            document.getElementById('reg-photo').value = dataUrl;
+            document.getElementById('photo-preview').src = dataUrl;
+            document.getElementById('photo-preview-wrap').style.display = 'block';
         }
 
         function selectRole(role) {
@@ -339,9 +444,15 @@
             const email = document.getElementById('reg-email').value.trim();
             const password = document.getElementById('reg-password').value;
             const role = document.getElementById('reg-role').value;
+            const photo = document.getElementById('reg-photo').value;
+
+            if (!photo) {
+                showError('Please upload your photo for identity verification.');
+                return;
+            }
 
             try {
-                const newUser = await apiPost('/api/auth/register', { name, email, password, role });
+                const newUser = await apiPost('/api/auth/register', { name, email, password, role, photo });
                 setSession(newUser);
                 showToast(`Account created! Welcome, ${name}!`, 'success');
                 const roleMap = { admin: 'admin/dashboard.html', user: 'user/dashboard.html', conductor: 'conductor/scanner.html' };

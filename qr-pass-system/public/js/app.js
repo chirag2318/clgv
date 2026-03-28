@@ -1,4 +1,4 @@
-﻿// =============================================
+// =============================================
 // BharatPass - Shared Utilities
 // =============================================
 
@@ -132,7 +132,7 @@ function getPassPrice(type) {
 }
 
 function getBadgeHTML(status) {
-  const icons = { active: '✅', pending: '⏳', expired: '❌', rejected: '🚫' };
+  const icons = { active: '✅', pending: '⏳', approved: '📋', expired: '❌', rejected: '🚫' };
   return `<span class="badge badge-${status}">${icons[status] || ''} ${status}</span>`;
 }
 

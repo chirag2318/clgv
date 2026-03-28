@@ -62,6 +62,12 @@
             margin-bottom: 24px;
         }
 
+        .badge-approved {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
         .payment-band {
             background: rgba(255, 145, 0, 0.08);
             border: 1px solid rgba(255, 145, 0, 0.2);
@@ -483,7 +489,8 @@
                     </div>
                     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
                         ${pass.status === 'active' ? `<button class="btn btn-primary btn-sm" onclick="showQR('${pass._id}')">📱 View QR Code</button>` : ''}
-                        ${pass.status === 'pending' ? `<button class="btn btn-sm" style="background:rgba(255,145,0,0.15);color:var(--accent-orange);border:1px solid rgba(255,145,0,0.3);" onclick="showPayment('${pass._id}')">💳 Pay Now</button>` : ''}
+                        ${pass.status === 'approved' ? `<button class="btn btn-sm" style="background:rgba(255,145,0,0.15);color:var(--accent-orange);border:1px solid rgba(255,145,0,0.3);" onclick="showPayment('${pass._id}')">💳 Pay Now</button>` : ''}
+                        ${pass.status === 'pending' ? `<span class="btn btn-sm" style="background:rgba(255,255,255,0.05);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1);cursor:default;">⏳ Awaiting Admin Approval</span>` : ''}
                         ${pass.status === 'expired' ? `<button class="btn btn-secondary btn-sm" onclick="switchSection('apply')">🔄 Renew</button>` : ''}
                     </div>
                     </div>
@@ -496,8 +503,6 @@
 
         async function renderPayments() {
             try {
-                // For now, payments can be fetched via passes or a separate endpoint if we add one.
-                // Let's just show an empty table or implement a quick get.
                 const tbody = document.getElementById('payment-table-body');
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px;">Payment history coming soon...</td></tr>`;
             } catch (err) {
@@ -505,44 +510,118 @@
             }
         }
 
+        async function showPayment(passId) {
+            const passes = await fetchPasses(currentSession.id);
+            const pass = passes.find(p => p._id === passId || p.id === passId);
+            if (!pass || pass.status !== 'approved') {
+                showToast('This pass is not ready for payment yet.', 'error');
+                return;
+            }
+
+            const price = pass.price || getPassPrice(pass.passType);
+            const durations = { monthly: 30, quarterly: 90, yearly: 365 };
+            const days = durations[pass.passType] || 30;
+
+            // --- MOCK PAYMENT FLOW (Guaranteed to Work for Demo) ---
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay active';
+            overlay.style.zIndex = '9999';
+            overlay.innerHTML = `
+                <div class="modal-content" style="text-align:center; padding: 40px 20px;">
+                    <div style="font-size:48px; margin-bottom:16px;">💳</div>
+                    <h3 style="margin-top:0;">Processing Payment...</h3>
+                    <p style="color:var(--text-muted);">Please wait while we securely process your payment of <b>₹${price}</b>.</p>
+                    <div style="margin:24px auto; width:40px; height:40px; border:4px solid var(--border-color); border-top:4px solid var(--primary-color); border-radius:50%; animation:spin 1s linear infinite;"></div>
+                </div>
+                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+            `;
+            document.body.appendChild(overlay);
+
+            // Simulate 2-second payment processing delay
+            setTimeout(async () => {
+                try {
+                    console.log('✅ [MOCK_PAYMENT] Payment Success Simulated!');
+
+                    console.log('⏳ [API_CALL] Activating pass ID:', pass._id);
+                    const activateRes = await apiPost('/api/passes/activate', {
+                        passId: pass._id,
+                        razorpayPaymentId: 'pay_mock_' + Math.random().toString(36).substr(2, 9)
+                    });
+                    console.log('✅ [API_RESULT] Activation Response:', activateRes);
+
+                    overlay.querySelector('.modal-content').innerHTML = `
+                        <div style="font-size:48px; margin-bottom:16px;">✅</div>
+                        <h3 style="margin-top:0; color:var(--success-color);">Payment Successful!</h3>
+                        <p style="color:var(--text-muted);">Your pass #${(pass.id || pass._id).slice(-6).toUpperCase()} is now active.</p>
+                    `;
+
+                    // Wait 1.5s then close and refresh UI
+                    setTimeout(async () => {
+                        document.body.removeChild(overlay);
+                        showToast('Pass activated successfully! 🥳', 'success');
+                        console.log('🔄 [UI_UPDATE] Calling renderPasses()...');
+                        await renderPasses();
+                        console.log('✅ [UI_UPDATE] renderPasses() finished.');
+                    }, 1500);
+
+                } catch (err) {
+                    console.error('❌ [ACTIVATION_ERROR] Error during activation flow:', err);
+                    document.body.removeChild(overlay);
+                    showToast('Activation failed: ' + (err.message || 'Server error'), 'error');
+                }
+            }, 2000);
+        }
+
         async function showQR(passId) {
             try {
+                console.log('Viewing QR for:', passId);
                 const passes = await fetchPasses(currentSession.id);
+                console.log('Latest passes from server:', passes);
                 const pass = passes.find(p => p._id === passId || p.id === passId);
-                if (!pass || !pass.qrToken) { showToast('QR code not available', 'error'); return; }
+
+                if (!pass) {
+                    showToast('Pass not found. Please refresh.', 'error');
+                    return;
+                }
+
+                if (pass.status !== 'active') {
+                    console.log('Pass found but status is:', pass.status);
+                    showToast(`QR not available (Status: ${pass.status})`, 'error');
+                    return;
+                }
 
                 const qrDiv = document.getElementById('qr-display');
                 qrDiv.innerHTML = '<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#444;font-size:0.85rem;">Generating QR...</div>';
                 openModal('qr-modal');
 
-                // Generate QR code locally to include the current timestamp (TOTP)
-                const generateLocalQR = async () => {
-                    // Make token look dynamic too
-                    const dynamicTkn = pass.qrToken + '-' + Math.floor(1000 + Math.random() * 9000);
-                    const qrData = JSON.stringify({
-                        token: dynamicTkn,
-                        passId: pass._id,
-                        city: pass.city || pass.route,
-                        name: currentSession.name,
-                        timestamp: Date.now() // The crucial part: timestamp changes every time
-                    });
-
+                // Generate QR by fetching OTP from server
+                const generateOtpQR = async () => {
                     try {
+                        const otpRes = await apiPost('/api/qr/generate-otp', {
+                            passId: pass._id,
+                            userId: currentSession.id
+                        });
+
+                        const qrData = JSON.stringify({
+                            passId: pass._id,
+                            otp: otpRes.otp
+                        });
+
                         const qrDataUrl = await QRCode.toDataURL(qrData, {
                             width: 200,
                             margin: 1,
                             color: { dark: '#000000', light: '#FFFFFF' },
                             errorCorrectionLevel: 'M',
                         });
-                        qrDiv.innerHTML = `<img src="${qrDataUrl}" width="180" height="180" style="border-radius:8px;display:block;" alt="Dynamic QR Code"/>`;
-                        
+                        qrDiv.innerHTML = `<img src="${qrDataUrl}" width="180" height="180" style="border-radius:8px;display:block;" alt="OTP QR Code"/>`;
+
                         const tokenDisplay = document.getElementById('qr-token-display');
-                        if (tokenDisplay) tokenDisplay.textContent = `Token: ${dynamicTkn}`;
-                        
+                        if (tokenDisplay) tokenDisplay.textContent = `OTP: ${otpRes.otp}`;
+
                         timeLeft = 60;
                         updateTimerDisplay();
                     } catch (err) {
-                        qrDiv.innerHTML = '<div style="color:red;padding:20px;">QR generation failed</div>';
+                        qrDiv.innerHTML = '<div style="color:red;padding:20px;">QR generation failed: ' + (err.message || 'Server error') + '</div>';
                     }
                 };
 
@@ -566,7 +645,7 @@
                     }
                     timeLeft--;
                     if (timeLeft <= 0) {
-                        generateLocalQR();
+                        generateOtpQR();
                     } else {
                         updateTimerDisplay();
                     }
@@ -584,9 +663,9 @@
                         </span>
                     </div>
                     </div>`;
-                
+
                 // Initial generation
-                await generateLocalQR();
+                await generateOtpQR();
             } catch (err) {
                 showToast('Failed to load QR code', 'error');
             }
