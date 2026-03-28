@@ -702,15 +702,8 @@
         async function activatePassAfterPayment(razorpayResponse) {
             if (!currentPassId) return;
             try {
-                const qrToken = generateToken();
-                const validFrom = new Date().toISOString().split('T')[0];
-                const validUntil = addDays(new Date(), getPassDuration(selectedPassType));
-
-                await apiPost('/api/admin/approve-pass', {
+                await apiPost('/api/passes/activate', {
                     passId: currentPassId,
-                    validFrom,
-                    validUntil,
-                    qrToken,
                     razorpayPaymentId: razorpayResponse.razorpay_payment_id
                 });
 
@@ -719,7 +712,7 @@
                 // Auto-show QR after payment
                 setTimeout(() => showQR(currentPassId), 800);
             } catch (err) {
-                showToast('Failed to activate pass', 'error');
+                showToast('Failed to activate pass: ' + err.message, 'error');
             }
         }
 
